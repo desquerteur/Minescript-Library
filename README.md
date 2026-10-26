@@ -1,179 +1,83 @@
 # Minescript travel
 
-Two original MIT scripts for the installed **Minecraft 26.3 / Minescript 5.0**
-setup: walking and rocket-assisted Elytra travel, both with automatic eating.
-The previous community collection has been removed.
+Walking, surface swimming, and rocket-saving Elytra travel with automatic eating,
+built for **Minecraft 26.3 / Minescript 5.0**. The two commands are original
+scripts distributed under the repository's [MIT license](LICENSE).
 
-**Status:** initial implementation with offline regression tests. Live Minecraft
-validation is outstanding. Elytra steering, takeoff, and landing are experimental;
-try them in a separate creative test world before a survival trip.
+**[Read the complete travel guide →](docs/TRAVEL.md)**
 
-## Commands
+## Quick start
 
-Enter these in Minecraft chat. Use a **backslash** before the command.
-
-| Script | Command | What it does |
-| --- | --- | --- |
-| [travel.py](travel.py) | `\travel 1200 -500` | Walk toward X=1200, Z=-500, following reachable terrain. |
-| [travel.py](travel.py) | `\travel 1200 64 -500` | Walk to those coordinates, including the requested feet height. |
-| [travel_elytra.py](travel_elytra.py) | `\travel_elytra 1200 -500` | Fly toward X/Z, choose a nearby landing surface, then finish on foot. |
-| [travel_elytra.py](travel_elytra.py) | `\travel_elytra 1200 64 -500` | Fly toward a landing area at the requested feet height, then finish on foot. |
-
-Use `X Z` when you do not know the surface height. `X Y Z` expects a reachable
-feet height, not an underground or midair point. Relative coordinates work:
-`\travel ~100 ~-200` or `\travel ~100 ~ ~-200`.
-
-For example, `\travel_elytra 1 1` means **X=1, Z=1**, with surface height chosen
-automatically. The resolved destination is printed with X/Y/Z labels before
-travel starts, including during `--check`. The selected landing patch is shown
-separately, with its distance from the original destination; a nearby touchdown
-is followed by walking to the original point. After touchdown, the script briefly
-waits for grounded position and momentum to settle before handing over to walking.
-If walking cannot start, it prints the actual position and the unchanged goal.
-
-There is no overall time or distance limit. Commands finish on arrival, on a
-stop request, or when they cannot continue. Run one traveler at a time.
-
-## Check the setup before moving
-
-```text
-\travel 1200 -500 --check
-\travel_elytra 1200 -500 --check
-```
-
-`--check` reads the setup without moving, eating, changing the selected item,
-or firing rockets. Walking also checks for a local route. Flight reports
-hunger, equipped-wing durability, and available plain rockets; takeoff and
-landing terrain are checked during the journey. This is not a live flight test.
-
-Remove `--check` to start. `\travel --help` and `\travel_elytra --help` show options.
-
-## Food and stopping
-
-Carry ordinary food in the hotbar **or main inventory**. At **14/20 hunger
-points** or below, the traveler eats until it has at least 18 points, verifies
-that hunger increased, and restores the previously selected hotbar slot.
-Change the trigger with `--eat-at 16`, for example.
-
-Food in main storage may be swapped into the hotbar; the displaced item stays
-in the inventory. Food is not sorted back into its original storage slot.
-Cooked meat/fish, bread, baked potatoes, golden carrots, apples, carrots,
-beetroot, potatoes, melon, berries, cookies, and dried kelp are supported.
-Harmful food, chorus fruit, potions, and golden apples are excluded.
-
-Walking pauses to eat and looks away from interactive blocks. While swimming,
-it keeps the float control held during eating so that the pause does not make
-the player sink. In flight,
-steering continues while eating. If food runs out during flight, the controller
-attempts a nearby landing; if no landing area is found, it returns control.
-
-- **F8** or opening chat/a menu releases the travel controls.
-- `\killjob -1` terminates all Minescript jobs.
-- Damage, low health, a dimension change, and unrecoverable travel errors also
-  return control. The scripts release their buttons when leaving normally or
-  through Python exceptions.
-- **Stopping the Elytra script does not stop your momentum or land you.**
-  Take control immediately if still airborne. Minecraft must be responsive for
-  stop controls and steering to work.
-
-## Walking
-
-Start on full blocks or in open water. The bot follows **long, checked corridors**
-and holds forward across clear stretches. Distant intermediate goals follow the
-bearing of your destination. It does not steer back to old block centers or first
-head toward a corner of the local scan before changing direction sideways.
-
-Shortcuts account for the player's full width plus a small margin. Both the floor
-and headroom must remain usable across that entire width, so diagonal shortcuts
-cannot clip walls or cut across the edge of a hole. One-block rises use a single
-jump and accept forward progress onto the new level, without repeatedly tapping
-forward or turning back to center on the step. Clear space beyond a step lets
-walking continue through the transition.
-
-The bot refreshes nearby terrain while retaining checked space ahead. An in-game
-movement timer releases forward if Python fails to renew that checked runway;
-distance traveled during a delayed call is deducted before another movement
-period is allowed. Tight ground approaches can use crouching to slow down.
-Swimming keeps its float control instead. Eating, an obstruction, an expired
-movement period, or an unsupported transition can pause walking; an unsafe route
-is replanned or stopped. Normal walking speed is assumed; unusual movement
-effects, moving entities, or changes outside the client's loaded data can still
-require manual control.
-
-The current terrain model recognizes common full blocks, double slabs, and
-non-colliding plants. It also plans across open **water surfaces**, including
-deep water where there is no reachable riverbed. It rejects lava, powder snow,
-cactus/fire hazards, unknown floors, and unsupported shapes. It does not dig, build bridges,
-climb ladders, open doors, or handle half slabs/stairs. Detours that extend
-beyond the local scan may need a manual intermediate destination.
-
-For rivers and lakes, the bot holds forward and the float control, stays at the
-surface, and resumes walking on a reachable bank. It can leave water onto a
-bank up to one block higher. Water plants such as kelp and seagrass are accepted.
-Surface movement uses a floating height rather than requiring feet to remain
-exactly at an integer block height. If it starts submerged, it first attempts
-to surface; it searches up to 16 blocks above for an open surface and gives the
-ascent up to 12 seconds. Roofed/under-ice water, downward waterfalls, bubble
-columns, and underwater destinations are not supported routes. Use `X Z` if
-you do not know the destination surface height. Flight landing pads still
-require dry solid ground.
-
-It stops after repeated blocked steps or 90 seconds without sustained distance
-progress, rather than pushing against the same obstacle indefinitely.
-
-## Elytra
-
-Wear an Elytra with **more than 60 durability remaining**. Carry **plain firework
-rockets without explosion stars**. Rockets and food can be in any normal carried
-inventory slot. Keep a clear outdoor takeoff corridor and sufficient food/fuel.
-
-The script selects a rocket before jumping. A callback inside the game opens
-the wings using Minecraft's normal eligibility check and glide request, then
-uses one rocket on the same game tick. This removes the Python round trips
-between opening the wings and boosting. The callback also watches for F8,
-menus, damage, and world changes, and is removed after launch. Active Creative
-flight must be turned off first. An already-gliding or airborne player is accepted.
-
-**Rocket-saving is the default.** A single rocket powers a climb, followed by a
-shallow glide that spends the gained altitude. Another rocket is requested only
-when altitude runs low and the previous climb has ended. There is no periodic
-four-second boost. Rocket duration is read from the held item, explosive rockets
-are rejected again inside the game, and each use is a single item action. The
-flight report includes the number of accepted rocket uses.
-
-The altitude reference is 50 blocks above the higher of the start and requested
-destination, capped at Y=310; `--height 80` raises that reference. Renewed climbs
-normally start 25 blocks below it. This is an altitude budget, not a guarantee
-of terrain clearance or a complete three-dimensional route.
-
-Landing searches loaded surface heights within **24 blocks** of the destination
-for a **dry, clear 5×5 patch**. For `X Y Z`, the patch must be at that feet height;
-`X Z` chooses a surface height automatically. If the goal area is unsuitable,
-the script also tries near the current flight position. It lets any active
-rocket finish, then chooses steering and pitch from a short motion prediction
-that accounts for inertia and braking before touchdown. This model assumes
-normal gravity and no movement effects. On touchdown, walking finishes the
-trip to the original coordinates, including correctly resolved relative coordinates.
-Low fuel/wing durability triggers an earlier landing attempt.
-
-Dense forest, enclosed spaces, Nether ceilings, unloaded terrain, uneven landing
-areas, lag, and strong effects on movement can exceed this controller's ability.
-Immediate obstacles, failed gliding, or an unsuccessful landing attempt return
-control instead of claiming arrival. The flight controller is not a substitute
-for an in-game tested navigation mod.
-
-## Installation
-
-Keep this folder at `minescript/Minescript-Library`. In `minescript/config.txt`:
+Keep the three Python files together in `minescript/Minescript-Library`. Add the
+folder to `minescript/config.txt`, retaining your working Python setting:
 
 ```text
 command_path=.;Minescript-Library;system/exec
 ```
 
-Your existing Python interpreter setting is retained. These scripts import the
-installed `minescript` and `java` modules; no additional navigation mod or Python
-package is required at runtime. [travel_common.py](travel_common.py) is a helper
-module, not another command. API reference: [Minescript 5.0 documentation](https://minescript.net/docs/).
+Join a world, stand on supported ground, and carry ordinary food in your hotbar
+or main inventory. Enter commands in **Minecraft chat**, with a **backslash**:
+
+```text
+\travel 1000 500 --check
+\travel 1000 500
+```
+
+The first command checks the setup and a local route without moving. The second
+starts travel. Two coordinates mean **X Z**; three mean **X Y Z**, where Y is feet
+height. `Y=surface` in chat means no particular destination Y was supplied.
+
+## Commands
+
+| Command | Purpose |
+| --- | --- |
+| `\travel 1000 500` | Walk/swim to X=1000, Z=500 along reachable terrain. |
+| `\travel 1000 67 500` | Also require destination feet Y=67. |
+| `\travel ~100 ~-50` | Move toward a goal offset from the command's starting X/Z. |
+| `\travel_elytra 1000 500` | Fly, choose a nearby landing patch, then finish at the original goal on foot. |
+| `\travel_elytra 1000 500 --height 80` | Use an 80-block flight altitude reference; the default is 50. |
+| `\travel 1000 500 --eat-at 16` | Eat at 16/20 hunger points or below; the default is 14. Both commands support this option. |
+| `\travel 1000 500 --check` | Check without starting movement. Both commands support `--check`. |
+| `\travel --help` / `\travel_elytra --help` | Print the built-in options. |
+
+Elytra travel requires equipped wings with **more than 60 durability**, plain
+rockets **without explosion stars**, food, and an open launch corridor. There is
+no overall trip time limit. Run one traveler at a time.
+
+## Full documentation
+
+| Topic | Guide |
+| --- | --- |
+| First trip | [Walking and Elytra quick starts](docs/TRAVEL.md#quick-start) |
+| Setup or update | [Requirements, folder layout, and loading changes](docs/TRAVEL.md#installation-and-updates) |
+| Every flag | [Command reference](docs/TRAVEL.md#command-reference) |
+| X/Z, X/Y/Z, `~`, and arrival tolerances | [Coordinates and arrival](docs/TRAVEL.md#coordinates-and-arrival) |
+| Continuous walking, obstacles, steps, and detours | [Walking](docs/TRAVEL.md#walking) |
+| Rivers, lakes, and banks | [Swimming](docs/TRAVEL.md#swimming) |
+| Hunger thresholds, inventory behavior, and every supported food | [Automatic eating](docs/TRAVEL.md#automatic-eating) |
+| Launch, rocket saving, height, and landing | [Elytra travel](docs/TRAVEL.md#elytra-travel) |
+| F8, menus, job termination, and restarting | [Stopping and restarting](docs/TRAVEL.md#stopping-and-restarting) |
+| Target versus landing spot, and what `Done` means | [Chat messages](docs/TRAVEL.md#reading-chat-messages) |
+| Error messages and recovery steps | [Troubleshooting](docs/TRAVEL.md#troubleshooting) |
+| Unsupported terrain and actions | [Limits](docs/TRAVEL.md#limits) |
+| Source layout, tests, and real Pyjinn checks | [Development and verification](docs/TRAVEL.md#development-and-verification) |
+
+## Movement and stopping
+
+Walking follows larger, body-width checked corridors and holds forward on clear
+stretches. Tight ground approaches can slow down; uncertain terrain and delayed
+updates can trigger a brake. Swimming keeps flotation active, including while
+eating. Elytra uses climb/glide cycles to conserve rockets, reports its chosen
+landing spot, and retains the original coordinates for the walking finish.
+
+Press **F8**, or open chat/a game menu, to stop. Closing the menu does not resume
+the job. `\killjob -1` terminates **all** Minescript jobs. Damage, low health,
+world/dimension changes, and unrecoverable route failures also return control.
+**Stopping an Elytra job does not cancel flight momentum or land you.**
+
+These are local client-side helpers, not a complete world navigation mod. They
+do not dig, bridge, open doors, or guarantee a route across every terrain or
+server condition. See the guide's [limits](docs/TRAVEL.md#limits).
 
 ## Development checks
 
@@ -182,21 +86,11 @@ python -m pytest -q
 python -m pytest --cov=travel --cov=travel_common --cov=travel_elytra
 ```
 
-Tests use a fake game bridge. They check pathfinding, simulated ground travel,
-food selection/verification, input cleanup, the shipped launch callback, rocket
-checks, flight-controller transitions, landing-area selection, and the handoff
-to walking. Landing feedback is also exercised in a simplified unboosted flight
-model at different update intervals. These checks do not establish live Minecraft
-launch or landing reliability; server behavior, collisions, and movement effects
-still require in-game testing.
+The normal suite uses offline game/geometry models. Optional tests use the real
+Pyjinn interpreter with Java fixtures; [configuration and scope](docs/TRAVEL.md#development-and-verification)
+are documented in the guide. Neither replaces live testing after movement changes.
 
-Optional Java bridge tests run the shipped surface lookup and walking timer
-through the real Pyjinn interpreter. They check Java `int` arguments, negative
-coordinates, unloaded chunks, world-border coordinates, stale timers, menu
-cancellation, and movement requests arriving after their runway is exhausted.
-Walking tests also exercise independent wall/hole geometry, arbitrary travel
-bearings, single jumps, and delayed updates. To enable the Java tests, set
-`MINESCRIPT_TEST_CLASSPATH` to the installed Pyjinn and
-Gson jars joined by your platform's classpath separator, and optionally set
-`MINESCRIPT_TEST_JAVA` to a JDK's `java` executable. Without that classpath, these
-tests are skipped. They do not connect to Minecraft.
+The runtime files are [travel.py](travel.py), [travel_elytra.py](travel_elytra.py),
+and the shared helper [travel_common.py](travel_common.py). No additional
+navigation mod or Python package is required at runtime. API reference:
+[Minescript API documentation](https://minescript.net/docs/).
