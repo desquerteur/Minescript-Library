@@ -52,3 +52,52 @@ def test_shipped_surface_lookup_with_real_pyjinn(tmp_path):
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert "Real Pyjinn surface lookup: PASS" in result.stdout
+
+
+def test_shipped_walk_lease_with_real_pyjinn(tmp_path):
+    classpath = os.environ.get("MINESCRIPT_TEST_CLASSPATH")
+    if not classpath:
+        pytest.skip("Set MINESCRIPT_TEST_CLASSPATH to the Pyjinn and Gson jars")
+    java = os.environ.get("MINESCRIPT_TEST_JAVA") or shutil.which("java")
+    if not java:
+        pytest.fail("The real Pyjinn bridge test requires a JDK")
+    root = Path(__file__).resolve().parents[1]
+    module = ast.parse((root / "travel.py").read_text(encoding="utf-8"))
+    native = next(
+        ast.literal_eval(node.value)
+        for node in module.body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(t, ast.Name) and t.id == "NATIVE_WALK_LEASE" for t in node.targets)
+    )
+    # Inject a Java API double while executing the shipped globals/functions.
+    # Event registration belongs to Minescript and is not available standalone.
+    pieces = ["key_listener, tick_listener = 1, 2"]
+    for node in ast.parse(native).body:
+        if isinstance(node, ast.Import):
+            continue
+        if isinstance(node, ast.Assign) and any(
+            isinstance(t, ast.Name) and t.id in {"key_listener", "tick_listener"}
+            for t in node.targets
+        ):
+            continue
+        pieces.append(ast.get_source_segment(native, node))
+    source = tmp_path / "shipped-walk-lease.pyj"
+    source.write_text("\n\n".join(pieces) + "\n", encoding="utf-8")
+    result = subprocess.run(  # noqa: S603
+        [
+            java,
+            "--class-path",
+            classpath,
+            str(root / "tests" / "fixtures" / "NativeWalkLeaseProbe.java"),
+            str(source),
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=30,
+        cwd=tmp_path,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Real Pyjinn walk lease: PASS" in result.stdout

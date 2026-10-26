@@ -78,18 +78,27 @@ attempts a nearby landing; if no landing area is found, it returns control.
 
 ## Walking
 
-Start on the ground on full blocks, or in open water. The local pathfinder works around nearby
-obstacles and handles one-block rises and drops. It **holds forward continuously
-on clear, level stretches**, checks the next few steps while moving, and reports
-remaining distance. Straight routes retain a checked buffer so local route
-refreshes can finish without releasing forward. Eating, blocked terrain, route
-ends, and precise elevation changes can pause walking.
+Start on full blocks or in open water. The bot follows **long, checked corridors**
+and holds forward across clear stretches. Distant intermediate goals follow the
+bearing of your destination. It does not steer back to old block centers or first
+head toward a corner of the local scan before changing direction sideways.
 
-Open diagonal paths use diagonal steps with both adjoining cells checked; the
-traveler does not need to zigzag between cardinal directions on open ground.
-Off-center starts first align with the next waypoint while keeping forward held.
-If a delayed position update crosses several known route cells, the controller
-resumes from that cell instead of declaring the player off-route.
+Shortcuts account for the player's full width plus a small margin. Both the floor
+and headroom must remain usable across that entire width, so diagonal shortcuts
+cannot clip walls or cut across the edge of a hole. One-block rises use a single
+jump and accept forward progress onto the new level, without repeatedly tapping
+forward or turning back to center on the step. Clear space beyond a step lets
+walking continue through the transition.
+
+The bot refreshes nearby terrain while retaining checked space ahead. An in-game
+movement timer releases forward if Python fails to renew that checked runway;
+distance traveled during a delayed call is deducted before another movement
+period is allowed. Tight ground approaches can use crouching to slow down.
+Swimming keeps its float control instead. Eating, an obstruction, an expired
+movement period, or an unsupported transition can pause walking; an unsafe route
+is replanned or stopped. Normal walking speed is assumed; unusual movement
+effects, moving entities, or changes outside the client's loaded data can still
+require manual control.
 
 The current terrain model recognizes common full blocks, double slabs, and
 non-colliding plants. It also plans across open **water surfaces**, including
@@ -181,10 +190,13 @@ model at different update intervals. These checks do not establish live Minecraf
 launch or landing reliability; server behavior, collisions, and movement effects
 still require in-game testing.
 
-The optional Java bridge test runs the shipped surface lookup through the real
-Pyjinn interpreter against Java methods with Minecraft's `int` signatures. It
-checks negative coordinates, unloaded chunks, and coordinates near the world
-border. To enable it, set `MINESCRIPT_TEST_CLASSPATH` to the installed Pyjinn and
+Optional Java bridge tests run the shipped surface lookup and walking timer
+through the real Pyjinn interpreter. They check Java `int` arguments, negative
+coordinates, unloaded chunks, world-border coordinates, stale timers, menu
+cancellation, and movement requests arriving after their runway is exhausted.
+Walking tests also exercise independent wall/hole geometry, arbitrary travel
+bearings, single jumps, and delayed updates. To enable the Java tests, set
+`MINESCRIPT_TEST_CLASSPATH` to the installed Pyjinn and
 Gson jars joined by your platform's classpath separator, and optionally set
-`MINESCRIPT_TEST_JAVA` to a JDK's `java` executable. Without that classpath, this
-test is skipped. It does not connect to Minecraft.
+`MINESCRIPT_TEST_JAVA` to a JDK's `java` executable. Without that classpath, these
+tests are skipped. They do not connect to Minecraft.

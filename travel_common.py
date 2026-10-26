@@ -332,7 +332,7 @@ class Session:
         return True
 
     def __exit__(self, *unused):
-        release("forward", "jump", "sprint", "use", "attack")
+        release("forward", "jump", "sprint", "sneak", "use", "attack")
         try:
             self.events.unregister_all()
         except Exception as error:

@@ -16,6 +16,7 @@ import travel_common as common
 import travel_elytra as elytra
 
 NativeFlightClass = elytra.NativeFlight
+WalkLeaseClass = travel.WalkLease
 
 
 class JavaInt32(int):
@@ -367,6 +368,236 @@ def test_flight_handoff_reaches_original_coordinates_after_settling(game, monkey
     assert not state.forward
 
 
+@pytest.mark.parametrize("destination", [(80, 37), (-65, 23), (17, -71), (-48, -19)])
+def test_arbitrary_directions_do_not_zigzag_back_to_cell_centers(game, monkeypatch, destination):
+    state = walking_simulation(game, monkeypatch, delayed_scans=True)
+    travel.main([str(destination[0]), str(destination[1])])
+    assert common.Destination(*destination).reached(game.player.position)
+    assert [held for held, _ in state.transitions].count(True) == 1
+    # Every aim advances along the requested open-world direction.
+    assert all(dx * destination[0] + dz * destination[1] > 0 for dx, dz in state.looks)
+    assert state.distance < 1.05 * math.hypot(destination[0] - 0.5, destination[1] - 0.5)
+
+
+def test_distant_goal_uses_its_bearing_instead_of_the_scan_corner():
+    path = travel.plan(world(radius=12), (0, 64, 0), common.Destination(1000, 500))
+    x, _, z = path[-1]
+    assert abs(x * 0.5 - z) / math.hypot(1, 0.5) < 1
+    assert x > z > 0
+
+
+@pytest.mark.parametrize(
+    "origin,goal", [((1.95, 64, 1.95), (1, 1)), ((-0.05, 64, -0.05), (-1, -1))]
+)
+def test_final_approach_inside_the_destination_block_still_finishes(
+    game, monkeypatch, origin, goal
+):
+    game.player.position = origin
+    state = walking_simulation(game, monkeypatch)
+    travel.main([str(goal[0]), str(goal[1])])
+    assert common.Destination(*goal).reached(game.player.position)
+    assert not state.forward
+
+
+def test_body_width_corridor_rejects_corner_clipping_and_side_holes():
+    terrain = world({(1, 64, 0): "minecraft:stone"})
+    assert not terrain.corridor((0.5, 64, 0.5), (1.5, 64, 1.5), 64)
+    terrain = world({(1, 63, 0): "minecraft:air"})
+    assert not terrain.corridor((0.9, 64, 0.5), (0.9, 64, 4.5), 64)
+    assert terrain.corridor((0.5, 64, 0.5), (0.5, 64, 4.5), 64)
+
+
+@pytest.mark.parametrize("kind", ["wall", "hole"])
+@pytest.mark.parametrize("inertia", [False, True])
+def test_walk_detours_with_full_body_clearance(game, monkeypatch, kind, inertia):
+    # Independent axis-aligned geometry: a 0.6-wide body must never intersect
+    # the rectangle, even between position updates and during delayed scans.
+    obstacle = (1, 3, 3, 8)  # x min/max, z min/max; target is beyond it.
+    game.player.position = (1.5, 64, 0.5)
+    state = walking_simulation(game, monkeypatch)
+    original_sleep = common.time.sleep
+    velocity = [0.0, 0.0]
+
+    def blocks(positions):
+        output = []
+        for x, y, z in positions:
+            inside = obstacle[0] <= x < obstacle[1] and obstacle[2] <= z < obstacle[3]
+            output.append(
+                "minecraft:air"
+                if kind == "hole" and inside
+                else "minecraft:stone"
+                if y <= 63 or inside and y <= 65
+                else "minecraft:air"
+            )
+        return output
+
+    api.getblocklist.side_effect = blocks
+
+    def sleep(seconds):
+        remaining = seconds
+        while remaining > 0:
+            delta = min(0.025, remaining)
+            before = game.player.position
+            original_sleep(delta)
+            if inertia:
+                speed = (1.3 if state.sneak else 4.3) if state.forward else 0
+                fraction = 1 - math.exp(-delta / 0.08)
+                for index in (0, 1):
+                    velocity[index] += (state.direction[index] * speed - velocity[index]) * fraction
+                game.player.position = (
+                    before[0] + velocity[0] * delta,
+                    64,
+                    before[2] + velocity[1] * delta,
+                )
+            remaining -= delta
+            x, _, z = game.player.position
+            overlaps = (
+                x + 0.3 > obstacle[0]
+                and x - 0.3 < obstacle[1]
+                and z + 0.3 > obstacle[2]
+                and z - 0.3 < obstacle[3]
+            )
+            assert not overlaps, "Body entered an obstacle or unsupported floor"
+
+    monkeypatch.setattr(common.time, "sleep", sleep)
+    travel.main(["1.5", "13"])
+    assert common.Destination(1.5, 13).reached(game.player.position)
+    assert not state.forward
+
+
+def test_native_walk_lease_brakes_and_rejects_stale_timeouts(game):
+    timers = []
+    api.add_event_listener.side_effect = lambda *args: 99
+    api.set_timeout.side_effect = lambda callback, millis, *args: (
+        timers.append((callback, millis, args)) or len(timers)
+    )
+    code = {"JavaInt": JavaInt32, "JavaClass": lambda name: NS(sqrt=math.sqrt)}
+    exec(compile(travel.NATIVE_WALK_LEASE, "<walk-lease>", "exec"), code)  # noqa: S102
+    assert code["drive"](600, False)
+    first = timers[-1]
+    assert type(first[1]) is JavaInt32
+    assert code["drive"](700, False)
+    first[0](*first[2])
+    assert api.player_press_forward.call_args_list == [call(True)]
+    last = timers[-1]
+    last[0](*last[2])
+    api.player_press_forward.assert_called_with(False)
+    assert code["drive"](600, True)
+    api.player_press_jump.reset_mock()
+    last = timers[-1]
+    last[0](*last[2])
+    api.player_press_jump.assert_not_called()  # An expired lease must not sink a swimmer.
+    code["key"](NS(key=297, action=1))
+    assert code["drive"](600, False) == -1
+    api.player_press_jump.assert_called_with(False)
+
+
+def test_native_walk_lease_menu_abort_and_cleanup(game):
+    api.add_event_listener.side_effect = lambda *args: 99
+    api.set_timeout.return_value = 123
+    code = {"JavaInt": JavaInt32, "JavaClass": lambda name: NS(sqrt=math.sqrt)}
+    exec(compile(travel.NATIVE_WALK_LEASE, "<walk-lease>", "exec"), code)  # noqa: S102
+    code["drive"](600, False)
+    api.screen_name.return_value = "Chat"
+    code["tick"](None)
+    assert code["drive"](600, False) == -1
+    code["close"]()
+    api.player_press_forward.assert_called_with(False)
+
+
+def test_native_water_runway_never_crouches_or_cancels_floating(game):
+    api.add_event_listener.side_effect = lambda *args: 99
+    api.set_timeout.return_value = 123
+    code = {"JavaInt": JavaInt32, "JavaClass": lambda name: NS(sqrt=math.sqrt)}
+    exec(compile(travel.NATIVE_WALK_LEASE, "<walk-lease>", "exec"), code)  # noqa: S102
+    code["drive"](500, True, True, 0.5, 0.5, 0.5)
+    code["drive"](500, True, True, 0.5, 0.5, 0.5)
+    api.player_press_sneak.assert_called_with(False)
+    assert call(True) not in api.player_press_sneak.call_args_list
+    api.player_press_jump.assert_not_called()
+
+
+def test_walk_lease_wrapper_uses_a_bounded_checked_distance(monkeypatch):
+    script = MagicMock()
+    drive = Mock(return_value=True)
+    script.get.side_effect = lambda name: drive if name == "drive" else Mock()
+    monkeypatch.setitem(sys.modules, "java", NS(eval_pyjinn_script=lambda source: script))
+    lease = WalkLeaseClass()
+    lease.drive(5)
+    assert 500 <= drive.call_args.args[0] <= 700
+    drive.return_value = -1
+    with pytest.raises(common.Stopped, match="F8"):
+        lease.drive(5)
+    lease.close()
+    script.exit.assert_called_once()
+
+
+@pytest.mark.parametrize("rise", [1, -1])
+def test_elevation_step_uses_one_forward_hold_and_never_aims_back(game, monkeypatch, rise):
+    start_y = 64 if rise > 0 else 65
+    end_y = start_y + rise
+    game.player.position = (0.5, start_y, 0.5)
+    state = walking_simulation(game, monkeypatch)
+    physics = NS(vy=0.0, grounded=True)
+    game.client.grounded.side_effect = lambda: physics.grounded
+    advance = common.time.sleep
+    api.getblocklist.side_effect = lambda positions: [
+        "minecraft:stone" if y < (start_y if z < 1 else end_y) else "minecraft:air"
+        for x, y, z in positions
+    ]
+
+    def jump(pressed):
+        if pressed and physics.grounded:
+            physics.vy, physics.grounded = 8.4, False
+
+    api.player_press_jump.side_effect = jump
+
+    def sleep(seconds):
+        remaining = seconds
+        while remaining > 0:
+            delta = min(0.01, remaining)
+            previous_y = game.player.position[1]
+            advance(delta)
+            x, _, z = game.player.position
+            if rise > 0 and previous_y < end_y and z + 0.3 > 1:
+                z = 0.7  # Solid riser blocks horizontal motion until the jump clears it.
+            floor = start_y if z + 0.29 < 1 else end_y
+            physics.vy -= 32 * delta
+            y = previous_y + physics.vy * delta
+            if y <= floor and physics.vy <= 0:
+                y, physics.vy, physics.grounded = floor, 0, True
+            else:
+                physics.grounded = False
+            game.player.position = (x, y, z)
+            remaining -= delta
+
+    monkeypatch.setattr(common.time, "sleep", sleep)
+    with common.Session(game.client) as session:
+        walker = travel.Walker(session)
+        assert travel.move(
+            session,
+            (0, start_y, 0),
+            (0, end_y, 1),
+            walker=walker,
+            continuation=[(0, end_y, 2), (0, end_y, 3)],
+        )
+        assert walker.walking
+        walker.close()
+    assert [held for held, _ in state.transitions].count(True) == 1
+    assert all(dz > 0 for _, dz in state.looks)
+    assert api.player_press_jump.call_args_list.count(call(True)) == (1 if rise > 0 else 0)
+
+
+def test_rejected_jump_stops_quickly_without_repeated_space_presses(game):
+    api.getblocklist.side_effect = lambda positions: [
+        "minecraft:stone" if y < (64 if z < 1 else 65) else "minecraft:air" for x, y, z in positions
+    ]
+    with common.Session(game.client) as session:
+        assert not travel.move(session, (0, 64, 0), (0, 65, 1))
+    assert game.clock.now < 2
+    assert api.player_press_jump.call_args_list.count(call(True)) == 1
+
+
 @pytest.fixture(autouse=True)
 def game(monkeypatch):
     api.reset_mock(return_value=True, side_effect=True)
@@ -423,7 +654,34 @@ def game(monkeypatch):
         ),
     )
     monkeypatch.setattr(elytra, "NativeFlight", lambda: native)
-    return NS(player=player, clock=clock, client=client, native=native)
+    leases = []
+
+    class FakeWalkLease:
+        def __init__(self):
+            self.active = False
+            self.deadline = math.inf
+            self.wet = False
+            leases.append(self)
+
+        def drive(self, distance, wet=False, *, origin=None):
+            api.player_press_sneak(distance < 1.2)
+            if not self.active:
+                api.player_press_forward(True)
+                self.active = True
+            self.deadline = clock.now + travel.walk_budget(distance) / 1000
+            self.wet = wet
+            return True
+
+        def stop(self):
+            if self.active:
+                api.player_press_forward(False)
+                self.active = False
+
+        def close(self):
+            self.stop()
+
+    monkeypatch.setattr(travel, "WalkLease", FakeWalkLease)
+    return NS(player=player, clock=clock, client=client, native=native, leases=leases)
 
 
 def flat_blocks(positions):
@@ -553,7 +811,7 @@ def test_astar_avoids_lava_and_cliffs():
 
 def test_long_route_returns_a_frontier_inside_the_scan():
     path = travel.plan(world(radius=8), (0, 64, 0), common.Destination(10000, 0))
-    assert path[-1][0] == 8
+    assert path[-1][0] == 7  # Keep a border for body width and the next safety check.
     assert len(path) <= 16
 
 
@@ -965,14 +1223,29 @@ def walking_simulation(game, monkeypatch, *, delayed_scans=False, hunger=False):
         hunger=20,
         hungry_once=False,
         food_ready=None,
+        sneak=False,
+        distance=0.0,
     )
 
     def advance(seconds):
-        game.clock.now += max(seconds, 0.001)
-        if state.forward:
-            x, y, z = game.player.position
-            dx, dz = state.direction
-            game.player.position = (x + dx * 4.3 * seconds, y, z + dz * 4.3 * seconds)
+        end = game.clock.now + max(seconds, 0.001)
+        while game.clock.now < end:
+            deadline = min(
+                (lease.deadline for lease in game.leases if lease.active), default=math.inf
+            )
+            elapsed = max(0, min(end, deadline) - game.clock.now)
+            if state.forward:
+                x, y, z = game.player.position
+                dx, dz = state.direction
+                speed = 1.3 if state.sneak else 4.3
+                game.player.position = (x + dx * speed * elapsed, y, z + dz * speed * elapsed)
+                state.distance += speed * elapsed
+            game.clock.now += elapsed
+            for lease in game.leases:
+                if lease.active and game.clock.now >= lease.deadline:
+                    lease.stop()
+                    if not lease.wet:
+                        api.player_press_jump(False)
         if hunger and not state.hungry_once and game.clock.now >= 2:
             state.hunger, state.hungry_once = 14, True
         if state.food_ready is not None and game.clock.now >= state.food_ready:
@@ -1002,6 +1275,7 @@ def walking_simulation(game, monkeypatch, *, delayed_scans=False, hunger=False):
         return flat_blocks(positions)
 
     api.player_press_forward.side_effect = forward
+    api.player_press_sneak.side_effect = lambda held: setattr(state, "sneak", held)
     api.player_press_use.side_effect = use
     api.player_look_at.side_effect = look
     api.getblocklist.side_effect = blocks
@@ -1343,14 +1617,15 @@ def test_slow_position_updates_resynchronize_to_later_route_cells(game, monkeypa
     def slow_blocks(positions):
         if state.forward and not state.delayed_once and game.clock.now >= 0.2:
             state.delayed_once = True
-            advance(0.75)  # More than three blocks move before the next snapshot.
+            advance(0.75)  # Native lease brakes during the stalled game-bridge call.
         return flat_blocks(positions)
 
     api.getblocklist.side_effect = slow_blocks
     travel.main(["0", "64", "40"])
     assert state.delayed_once
     assert common.Destination(0, 40, 64).reached(game.player.position)
-    assert [held for held, _ in state.transitions].count(True) == 1
+    assert [held for held, _ in state.transitions].count(True) == 2
+    assert all(dz > 0 for _, dz in state.looks)
     assert all(dz > 0 for _, dz in state.looks)
 
 
