@@ -93,8 +93,12 @@ Wear an Elytra with **more than 60 durability remaining**. Carry **plain firewor
 rockets without explosion stars**. Rockets and food can be in any normal carried
 inventory slot. Keep a clear outdoor takeoff corridor and sufficient food/fuel.
 
-The script checks the launch corridor, double-jumps, confirms gliding, and only
-then uses a rocket. It also accepts an already-gliding player. Default cruise
+The script checks the launch corridor, jumps once, waits until airborne, opens
+the wings using Minecraft's normal glide request, and confirms that gliding
+stays active before using a rocket. It also accepts an already-gliding or
+airborne player. Active Creative flight must be turned off first; the script
+does not change your game mode. A blocked jump and a refused glide now produce
+different messages. `--check` also shows these flight states. Default cruise
 height is 50 blocks above the higher of the start and requested destination,
 capped at Y=310; `--height 80` changes that clearance target. This is a target,
 not a guarantee of terrain clearance or a complete three-dimensional route.

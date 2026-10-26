@@ -122,9 +122,13 @@ class Flight:
     def takeoff(self):
         if self.session.client.flying():
             return
-        if not self.session.client.grounded():
-            raise Stopped("Start on the ground or while already gliding.")
-        x, y, z = cell(self.session.position)
+        if self.session.client.creative_flying():
+            raise Stopped("Creative flight is active. Land and turn it off before Elytra takeoff.")
+        if self.session.client.grounded():
+            x, y, z = cell(self.session.position)
+        else:
+            # An already airborne player can open the wings without another jump.
+            x, y, z = (math.floor(value) for value in self.session.position)
         positions = [
             [x + dx, y + dy, z + dz]
             for dx in (-1, 0, 1)
@@ -147,27 +151,62 @@ class Flight:
             raise Stopped(
                 "Takeoff needs clear space overhead. Move outside, away from trees/buildings."
             )
-        self.session.eat()
+        if self.session.client.grounded():
+            self.session.eat()
+        self.session.client.prepare_glide()
+        self.session.check()
         yaw, _ = flight_angles(
             self.session.position, self.session.velocity, self.destination, self.cruise_y
         )
         m.player_set_orientation(yaw, -35)
-        try:
-            m.player_press_jump(True)
-            self.session.wait(0.18)
-            m.player_press_jump(False)
-            self.session.wait(0.18)
-            m.player_press_jump(True)
-            self.session.wait(0.12)
-        finally:
-            release("jump")
-        self.session.wait(0.12)
-        if not self.session.client.flying():
-            raise Stopped(
-                "Elytra did not open. No rocket was used; check launch clearance and wings."
+        for attempt in range(2):
+            self.session.check()
+            if self.session.client.grounded():
+                # One physical jump. A timed second press can miss the airborne
+                # window or toggle Creative flight instead of opening wings.
+                deadline = time.monotonic() + 1.5
+                try:
+                    m.player_press_jump(True)
+                    while self.session.client.grounded():
+                        self.session.check()
+                        if time.monotonic() >= deadline:
+                            raise Stopped(
+                                "Jump did not leave the ground. Check the ceiling, water or riding. "
+                                "No rocket was used."
+                            )
+                        time.sleep(0.03)
+                finally:
+                    release("jump")
+            deadline = time.monotonic() + 1.5
+            confirmed_since = None
+            next_request = 0.0
+            accepted = False
+            while time.monotonic() < deadline:
+                self.session.check()
+                now = time.monotonic()
+                if self.session.client.flying():
+                    if confirmed_since is None:
+                        confirmed_since = now
+                    elif now - confirmed_since >= 0.12:
+                        if not self.boost():
+                            raise Stopped("No plain flight rockets left. Take control.")
+                        return
+                else:
+                    confirmed_since = None
+                    if self.session.client.grounded():
+                        break
+                    if now >= next_request:
+                        accepted = self.session.client.request_glide() or accepted
+                        next_request = time.monotonic() + 0.25
+                time.sleep(0.03)
+            m.log(
+                f"travel_elytra launch {attempt + 1}: glide request accepted={accepted}, "
+                f"grounded={self.session.client.grounded()}"
             )
-        if not self.boost():
-            raise Stopped("No plain flight rockets left. Take control.")
+        raise Stopped(
+            "Elytra did not open and stay gliding. No rocket was used. "
+            "Minecraft refused or cancelled the glide request; check wings, water, riding or levitation."
+        )
 
     def obstacles(self):
         position, velocity = self.session.position, self.session.velocity
@@ -296,6 +335,10 @@ def main(args):
             f"{sum(field(item, 'count', 0) for item in available)} plain rockets."
         )
         m.echo("Read-only check complete. Takeoff/landing terrain is checked during travel.")
+        m.echo(
+            f"Launch state: on ground={client.grounded()}, Elytra gliding={client.flying()}, "
+            f"Creative flight={client.creative_flying()}."
+        )
         return
     if options.destination.reached(m.player_position()):
         m.echo("Already at the destination.")

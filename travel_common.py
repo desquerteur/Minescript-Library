@@ -93,6 +93,35 @@ class Client:
         self.flying: Callable[[], bool] = self.player.isFallFlying
         self.chest_slot: Any = JavaClass("net.minecraft.world.entity.EquipmentSlot").CHEST
         self.elytra: Any = JavaClass("net.minecraft.world.item.Items").ELYTRA
+        self._glide_packet: Any = None
+
+    def creative_flying(self) -> bool:
+        return bool(self.player.getAbilities().flying)
+
+    def prepare_glide(self):
+        """Prepare vanilla's glide request before the short jump window begins."""
+        if self._glide_packet is not None:
+            return
+        from java import JavaClass
+
+        packet_type: Any = JavaClass(
+            "net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket"
+        )
+        action_type: Any = JavaClass(
+            "net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket$Action"
+        )
+        self._glide_packet = packet_type(self.player, action_type.START_FALL_FLYING)
+        self._try_gliding: Callable[[], bool] = self.player.tryToStartFallFlying
+        self._send_glide: Callable[[Any], None] = self.player.connection.send
+
+    def request_glide(self) -> bool:
+        # Same eligibility check and server notification as LocalPlayer.aiStep
+        # in the installed 26.3 client. Do not force the shared flight flag.
+        self.prepare_glide()
+        if not self._try_gliding():
+            return False
+        self._send_glide(self._glide_packet)
+        return True
 
     def food_level(self):
         level = self.hunger()

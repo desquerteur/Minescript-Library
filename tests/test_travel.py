@@ -51,6 +51,9 @@ def game(monkeypatch):
         grounded=Mock(return_value=True),
         flying=Mock(return_value=True),
         wings_remaining=Mock(return_value=400),
+        creative_flying=Mock(return_value=False),
+        prepare_glide=Mock(),
+        request_glide=Mock(return_value=False),
     )
     monkeypatch.setattr(travel, "Client", lambda: client)
     monkeypatch.setattr(elytra, "Client", lambda: client)
@@ -391,7 +394,7 @@ def test_failed_elytra_open_does_not_fire_a_rocket(game):
     api.getblocklist.side_effect = flat_blocks
     with (
         common.Session(game.client) as session,
-        pytest.raises(common.Stopped, match="did not open"),
+        pytest.raises(common.Stopped, match="Jump did not leave"),
     ):
         elytra.Flight(session, common.Destination(100, 0), 50).takeoff()
     assert call(True) not in api.player_press_use.call_args_list
@@ -718,3 +721,146 @@ def test_waypoint_plane_accepts_a_small_overshoot_without_aiming_back():
     assert travel.passed((0.5, 64, 1.8), (0, 64, 0), (0, 64, 1))
     assert not travel.passed((1.2, 64, 1.8), (0, 64, 0), (0, 64, 1))
     assert not travel.passed((0.5, 64, 50), (0, 64, 0), (0, 64, 1))
+
+
+@pytest.mark.parametrize("jump_delay", [0.03, 0.75])
+def test_launch_waits_for_airborne_state_then_confirms_gliding_before_boost(
+    game, monkeypatch, jump_delay
+):
+    api.getblocklist.side_effect = flat_blocks
+    api.player_inventory.return_value = [NS(item="minecraft:firework_rocket", count=64, slot=1)]
+    state = NS(jumped_at=None, requested_at=None, prepared=False, boosted_at=None)
+
+    def prepare():
+        state.prepared = True
+
+    def jump(pressed):
+        if pressed:
+            assert state.prepared, "Prepare reflection before the airborne window"
+            state.jumped_at = game.clock.now
+
+    def grounded():
+        return state.jumped_at is None or game.clock.now - state.jumped_at < jump_delay
+
+    def request():
+        assert not grounded(), "Do not send a launch request on the ground"
+        state.requested_at = game.clock.now
+        return True
+
+    def flying():
+        return state.requested_at is not None and game.clock.now - state.requested_at >= 0.09
+
+    def use(pressed):
+        if pressed:
+            assert flying()
+            assert game.clock.now - state.requested_at >= 0.21
+            state.boosted_at = game.clock.now
+
+    game.client.prepare_glide.side_effect = prepare
+    game.client.grounded.side_effect = grounded
+    game.client.request_glide.side_effect = request
+    game.client.flying.side_effect = flying
+    api.player_press_jump.side_effect = jump
+    api.player_press_use.side_effect = use
+    with common.Session(game.client) as session:
+        elytra.Flight(session, common.Destination(100, 0), 50).takeoff()
+    assert api.player_press_jump.call_args_list.count(call(True)) == 1
+    assert state.boosted_at is not None
+    game.client.request_glide.assert_called_once()
+    api.player_press_jump.assert_called_with(False)
+
+
+def test_active_creative_flight_has_a_specific_message_and_no_takeoff(game):
+    game.client.flying.return_value = False
+    game.client.creative_flying.return_value = True
+    with (
+        common.Session(game.client) as session,
+        pytest.raises(common.Stopped, match="Creative flight is active"),
+    ):
+        elytra.Flight(session, common.Destination(100, 0), 50).takeoff()
+    game.client.prepare_glide.assert_not_called()
+    assert call(True) not in api.player_press_jump.call_args_list
+    assert call(True) not in api.player_press_use.call_args_list
+
+
+def test_refused_glide_request_never_uses_a_rocket(game):
+    api.getblocklist.side_effect = flat_blocks
+    game.client.flying.return_value = False
+    game.client.grounded.return_value = False
+    with (
+        common.Session(game.client) as session,
+        pytest.raises(common.Stopped, match="did not open and stay"),
+    ):
+        elytra.Flight(session, common.Destination(100, 0), 50).takeoff()
+    assert 1 <= game.client.request_glide.call_count <= 14
+    assert call(True) not in api.player_press_use.call_args_list
+    assert call(True) not in api.player_press_jump.call_args_list
+
+
+def test_transient_glide_flag_is_not_treated_as_a_confirmed_launch(game):
+    api.getblocklist.side_effect = flat_blocks
+    game.client.grounded.return_value = False
+    state = NS(requested_at=None)
+
+    def request():
+        state.requested_at = game.clock.now
+        return True
+
+    game.client.request_glide.side_effect = request
+    game.client.flying.side_effect = lambda: (
+        state.requested_at is not None and game.clock.now - state.requested_at < 0.06
+    )
+    with (
+        common.Session(game.client) as session,
+        pytest.raises(common.Stopped, match="did not open and stay"),
+    ):
+        elytra.Flight(session, common.Destination(100, 0), 50).takeoff()
+    assert call(True) not in api.player_press_use.call_args_list
+
+
+def test_f8_during_jump_releases_space_and_does_not_boost(game):
+    api.getblocklist.side_effect = flat_blocks
+    game.client.flying.return_value = False
+
+    def event(*args, **kwargs):
+        if game.clock.now >= 0.2:
+            return NS(key=297, action=1)
+        raise queue.Empty
+
+    api.EventQueue.return_value.get.side_effect = event
+    with common.Session(game.client) as session, pytest.raises(common.Stopped, match="F8"):
+        elytra.Flight(session, common.Destination(100, 0), 50).takeoff()
+    api.player_press_jump.assert_called_with(False)
+    assert call(True) not in api.player_press_use.call_args_list
+
+
+def test_native_glide_request_uses_vanilla_eligibility_and_sends_only_when_accepted(monkeypatch):
+    sent = Mock()
+    allowed = Mock(side_effect=[False, True, False])
+    player = NS(tryToStartFallFlying=allowed, connection=NS(send=sent))
+    packet = object()
+    packet_type = Mock(return_value=packet)
+    classes = {
+        "net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket": packet_type,
+        "net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket$Action": NS(
+            START_FALL_FLYING="glide"
+        ),
+    }
+    monkeypatch.setitem(sys.modules, "java", NS(JavaClass=lambda name: classes[name]))
+    client = object.__new__(common.Client)
+    client.player, client._glide_packet = player, None
+    client.prepare_glide()
+    assert client.request_glide() is False
+    assert client.request_glide() is True
+    assert client.request_glide() is False
+    packet_type.assert_called_once_with(player, "glide")
+    sent.assert_called_once_with(packet)
+
+
+def test_creative_flight_reader_checks_live_ability_state():
+    abilities = NS(flying=False)
+    client = object.__new__(common.Client)
+    client.player = NS(getAbilities=lambda: abilities)
+    assert client.creative_flying() is False
+    abilities.flying = True
+    assert client.creative_flying() is True
