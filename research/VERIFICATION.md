@@ -8,7 +8,7 @@
 | Provenance | 12 pinned community/tutorial source packages; MIT notices preserved |
 | Syntax | All 142 catalog files parse; 101 program syntax trees are distinct |
 | Python undefined names | No F821 findings in catalog Python programs after documented fixes |
-| Regression tests | 114 passed |
+| Regression tests | 137 passed |
 | Maintained-code statement coverage | 91%; community, examples, tests, and tools excluded |
 | Ruff | Maintained code and tools passed |
 | Pyright | Maintained command/helper code passed against the installed Minescript 5.0 API |
@@ -22,6 +22,12 @@ The mining tests exercise fluid hazards, unsupported floors, falling ceilings,
 container protection, entity interference, blocked movement, route endpoints,
 cardinal directions, full inventory, missing tools, and key release. Tests use
 a fake game bridge and do not dig or move in a real world.
+
+Continuous-mode regressions verify no default deadline after a simulated day,
+unlimited strip-mining routes past 10,000 steps, branch routes beyond the old
+64-block limit, constant-memory route iterators, explicit finite limits,
+cancellation cleanup, and recovery from failed casts, lost bobbers, and stalled
+fishing bites. Natural dirt/clay and safely supported gravel are also covered.
 
 Four vendor fixes retain original snapshots and hashes: a missing `echo`
 import, a missing farmer help function, and two hardcoded job-1 termination

@@ -14,13 +14,25 @@ class Stopped(Exception):
     """An expected reason for finishing an automation session."""
 
 
-def duration(args, default=300):
+UNLIMITED = {"0", "forever", "endless", "unlimited"}
+
+
+def duration(args, default=None):
+    """No argument, zero, or 'forever' means no time limit."""
     if len(args) > 1:
         raise ValueError("Provide at most one duration in seconds.")
-    value = float(args[0]) if args else default
-    if not math.isfinite(value) or not 1 <= value <= 3600:
-        raise ValueError("Duration must be between 1 and 3600 seconds.")
-    return value
+    if not args:
+        if default is None:
+            return None
+        token = str(default)
+    else:
+        token = str(args[0])
+    if token.strip().casefold() in UNLIMITED:
+        return None
+    value = float(token)
+    if not math.isfinite(value) or value < 0:
+        raise ValueError("Use positive seconds, or 0/forever for no time limit.")
+    return value or None
 
 
 def block_id(state):
@@ -44,8 +56,10 @@ def require_item(item_id):
 class Session:
     """Stop on F8, a GUI, damage, world changes, or the time limit."""
 
-    def __init__(self, seconds):
-        self.deadline = time.monotonic() + seconds
+    def __init__(self, seconds=None):
+        if seconds is not None and (not math.isfinite(seconds) or seconds < 0):
+            raise ValueError("Session duration must be positive or unlimited.")
+        self.deadline = time.monotonic() + seconds if seconds else None
         self.events = m.EventQueue()
         self.world = None
         self.health = 0.0
@@ -64,7 +78,8 @@ class Session:
             self.health = m.player_health()
             if self.health <= 6:
                 raise Stopped("Health is too low to start automation.")
-            m.echo("Started. F8 or opening a menu stops this script.")
+            mode = "Running continuously" if self.deadline is None else "Running with a time limit"
+            m.echo(f"{mode}. F8 or opening a menu stops this script.")
             return self
         except BaseException:
             self.__exit__(None, None, None)
@@ -78,7 +93,7 @@ class Session:
                 break
             if event.key == 297 and event.action == 1:  # GLFW F8
                 raise Stopped("Stopped with F8.")
-        if time.monotonic() >= self.deadline:
+        if self.deadline is not None and time.monotonic() >= self.deadline:
             raise Stopped("Time limit reached.")
         if m.screen_name() is not None:
             raise Stopped("A menu was opened.")

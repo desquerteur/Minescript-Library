@@ -2510,7 +2510,7 @@
       "runtime": "Python",
       "status": "maintained / offline checked / live test pending",
       "notes": [],
-      "example": "\\automine cobblestone 120",
+      "example": "\\automine cobblestone",
       "sha256": "f6e5674a49b85b67c09eceb6e3dfa125be8a9a2b3f798d5aeb34a84682716202"
     },
     {
@@ -2519,14 +2519,14 @@
       "path": "farm.py",
       "package": "maintained",
       "kind": "command",
-      "description": "Harvest and replant ripe wheat, carrots, potatoes, and beetroot.",
+      "description": "Continuously harvest and replant ripe wheat, carrots, potatoes, and beetroot.",
       "license": "MIT",
       "source": "https://github.com/desquerteur/Minescript-Library/blob/main/farm.py",
       "revision": "maintained locally",
       "runtime": "Python",
       "status": "maintained / offline checked / live test pending",
       "notes": [],
-      "example": "\\farm 300",
+      "example": "\\farm",
       "sha256": "c4910eb56f2e253922ff3b0245f03c5584c8402166a1e8389b349ce91b1f8147"
     },
     {
@@ -2535,15 +2535,15 @@
       "path": "shear.py",
       "package": "maintained",
       "kind": "command",
-      "description": "Shear reachable sheep while holding shears.",
+      "description": "Continuously shear reachable sheep while holding shears.",
       "license": "MIT",
       "source": "https://github.com/desquerteur/Minescript-Library/blob/main/shear.py",
       "revision": "maintained locally",
       "runtime": "Python",
       "status": "maintained / offline checked / live test pending",
       "notes": [],
-      "example": "\\shear 300",
-      "sha256": "1e30f8bbd55be4d45b733bc29492e05acf5177637289c5c8eef933ce3490f7e5"
+      "example": "\\shear",
+      "sha256": "532dc94c594ce027eeed1dc3b14937e3e8e1816e41869bfed067686b3d5b4fd7"
     },
     {
       "id": "autofish",
@@ -2551,15 +2551,15 @@
       "path": "autofish.py",
       "package": "maintained",
       "kind": "command",
-      "description": "Cast, detect bobber dips, reel in, and recast while holding a rod.",
+      "description": "Fish continuously and recover from missed casts, lost bobbers, and stalled bites.",
       "license": "MIT",
       "source": "https://github.com/desquerteur/Minescript-Library/blob/main/autofish.py",
       "revision": "maintained locally",
       "runtime": "Python",
       "status": "maintained / offline checked / live test pending",
       "notes": [],
-      "example": "\\autofish 300",
-      "sha256": "bfdc698fef89eb648fcde4e0688f44de21f92232913ede78c723f498022d83a1"
+      "example": "\\autofish",
+      "sha256": "c6abae55ba4a23b7453c16910d6774b9fadc10d2b02e426848a97ce10a1914e9"
     },
     {
       "id": "inventory",
@@ -2631,15 +2631,15 @@
       "path": "stripmine.py",
       "package": "maintained",
       "kind": "command",
-      "description": "Strip mining: dig and walk a one-wide, two-high tunnel with bounded hazard checks.",
+      "description": "Strip mining: continuously dig and walk a one-wide, two-high tunnel. Optional limits.",
       "license": "MIT",
       "source": "https://github.com/desquerteur/Minescript-Library/blob/main/stripmine.py",
       "revision": "maintained locally",
       "runtime": "Python",
       "status": "maintained / offline checked / live test pending",
       "notes": [],
-      "example": "\\stripmine 16 300",
-      "sha256": "cb839e65ec40dfebbffdca440362669e7760f74e78c7e2556eb08e636bb0604f"
+      "example": "\\stripmine",
+      "sha256": "db222f7090ff2d5b26b152c31661eecc431b4784b033876df426e8f479613e09"
     },
     {
       "id": "branchmine",
@@ -2647,15 +2647,15 @@
       "path": "branchmine.py",
       "package": "maintained",
       "kind": "command",
-      "description": "Branch mining: dig a main tunnel with paired side branches and return to the center.",
+      "description": "Branch mining: continuously extend a main tunnel with paired side branches.",
       "license": "MIT",
       "source": "https://github.com/desquerteur/Minescript-Library/blob/main/branchmine.py",
       "revision": "maintained locally",
       "runtime": "Python",
       "status": "maintained / offline checked / live test pending",
       "notes": [],
-      "example": "\\branchmine 16 4 6 600",
-      "sha256": "994d81e674be9c4da6d457244febfc8d13386ebb50fbaaf74e84ff6bf59c01bf"
+      "example": "\\branchmine",
+      "sha256": "b04d387c0b761c8486de6f1b6710ffc757df4b17957b30b5a5779e1730ba2e15"
     },
     {
       "id": "chunkcoords",
@@ -2775,14 +2775,14 @@
       "path": "blockwatch.py",
       "package": "maintained",
       "kind": "command",
-      "description": "Report changes to the block targeted when the script starts.",
+      "description": "Continuously report changes to the initially targeted block.",
       "license": "MIT",
       "source": "https://github.com/desquerteur/Minescript-Library/blob/main/blockwatch.py",
       "revision": "maintained locally",
       "runtime": "Python",
       "status": "maintained / offline checked / live test pending",
       "notes": [],
-      "example": "\\blockwatch 300",
+      "example": "\\blockwatch",
       "sha256": "38640d539fc3fdb86420dd63f9d01f8298f0177b121bd80de67cfb52c68aadd5"
     },
     {
@@ -2791,14 +2791,14 @@
       "path": "pickupwatch.py",
       "package": "maintained",
       "kind": "command",
-      "description": "Report item pickups by your own player.",
+      "description": "Continuously report item pickups by your own player.",
       "license": "MIT",
       "source": "https://github.com/desquerteur/Minescript-Library/blob/main/pickupwatch.py",
       "revision": "maintained locally",
       "runtime": "Python",
       "status": "maintained / offline checked / live test pending",
       "notes": [],
-      "example": "\\pickupwatch 300",
+      "example": "\\pickupwatch",
       "sha256": "f0b5565e61fbe903251edb8662b3009ffaaa862780e7110c29432e5ec0ba2834"
     },
     {
@@ -2807,14 +2807,14 @@
       "path": "inventorywatch.py",
       "package": "maintained",
       "kind": "command",
-      "description": "Report increases and decreases in carried item counts.",
+      "description": "Continuously report increases and decreases in carried item counts.",
       "license": "MIT",
       "source": "https://github.com/desquerteur/Minescript-Library/blob/main/inventorywatch.py",
       "revision": "maintained locally",
       "runtime": "Python",
       "status": "maintained / offline checked / live test pending",
       "notes": [],
-      "example": "\\inventorywatch 300",
+      "example": "\\inventorywatch",
       "sha256": "dd38157c5e3cbcb5859886d3c2a71a00e82d745607b6add6bdfb7a5168b20d24"
     },
     {
@@ -2862,7 +2862,7 @@
       "runtime": "Python",
       "status": "support module",
       "notes": [],
-      "sha256": "43754a781dc147d1d45cef4c911dcb65007cad75c719b5efd7cacce6d8c03ee7"
+      "sha256": "eef033e854202b02678cca6850106b5c664f95d0c19491b771b63fbaa5deae53"
     },
     {
       "id": "library_tools",

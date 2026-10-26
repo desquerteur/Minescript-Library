@@ -11,21 +11,24 @@ from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
 MAINTAINED = {
-    "automine": ("Mine matching visible blocks while staying in place.", "cobblestone 120"),
-    "farm": ("Harvest and replant ripe wheat, carrots, potatoes, and beetroot.", "300"),
-    "shear": ("Shear reachable sheep while holding shears.", "300"),
-    "autofish": ("Cast, detect bobber dips, reel in, and recast while holding a rod.", "300"),
+    "automine": ("Mine matching visible blocks while staying in place.", "cobblestone"),
+    "farm": ("Continuously harvest and replant ripe wheat, carrots, potatoes, and beetroot.", ""),
+    "shear": ("Continuously shear reachable sheep while holding shears.", ""),
+    "autofish": (
+        "Fish continuously and recover from missed casts, lost bobbers, and stalled bites.",
+        "",
+    ),
     "inventory": ("Count matching carried items and show available inventory slots.", "wheat"),
     "nearby": ("Locate nearby loaded animals, players, and dropped items.", "16 sheep"),
     "entityinfo": ("Inspect the entity in your crosshair, including available health.", "6"),
     "diagnose": ("Display Minecraft, Minescript, Python, and loader versions.", ""),
     "stripmine": (
-        "Strip mining: dig and walk a one-wide, two-high tunnel with bounded hazard checks.",
-        "16 300",
+        "Strip mining: continuously dig and walk a one-wide, two-high tunnel. Optional limits.",
+        "",
     ),
     "branchmine": (
-        "Branch mining: dig a main tunnel with paired side branches and return to the center.",
-        "16 4 6 600",
+        "Branch mining: continuously extend a main tunnel with paired side branches.",
+        "",
     ),
     "chunkcoords": ("Show your current chunk and within-chunk coordinates.", ""),
     "bearing": ("Calculate distance and aiming angles to an XYZ coordinate.", "0 64 0"),
@@ -37,9 +40,9 @@ MAINTAINED = {
     "cropstatus": ("Count ripe and still-growing crops near you.", "4"),
     "branchplan": ("Preview branch-tunnel endpoint coordinates without digging.", "16 4 6"),
     "worldclock": ("Display the in-game clock, dimension, and weather.", ""),
-    "blockwatch": ("Report changes to the block targeted when the script starts.", "300"),
-    "pickupwatch": ("Report item pickups by your own player.", "300"),
-    "inventorywatch": ("Report increases and decreases in carried item counts.", "300"),
+    "blockwatch": ("Continuously report changes to the initially targeted block.", ""),
+    "pickupwatch": ("Continuously report item pickups by your own player.", ""),
+    "inventorywatch": ("Continuously report increases and decreases in carried item counts.", ""),
     "equip": ("Find an item in carried storage and select it in the hotbar.", "iron_pickaxe"),
     "library": ("Search, inspect, and explicitly launch entries in this catalog.", "list mining"),
 }

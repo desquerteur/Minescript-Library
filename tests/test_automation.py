@@ -2,6 +2,7 @@
 
 import queue
 import sys
+from itertools import islice
 from types import SimpleNamespace as NS
 from unittest.mock import MagicMock, Mock, call
 
@@ -56,7 +57,7 @@ def game(monkeypatch):
     return api
 
 
-@pytest.mark.parametrize("args", [["nan"], ["inf"], ["0"], ["-1"], ["3601"], ["1", "2"]])
+@pytest.mark.parametrize("args", [["nan"], ["inf"], ["-1"], ["invalid"], ["1", "2"]])
 def test_duration_rejects_unbounded_or_invalid_input(args):
     with pytest.raises(ValueError):
         common.duration(args)
@@ -234,8 +235,8 @@ def test_cleanup_attempts_remaining_releases_after_bridge_error():
 
 def test_cast_times_out_without_adopting_existing_bobber(monkeypatch):
     monkeypatch.setattr(autofish, "bobbers", lambda: {"existing": NS(uuid="existing")})
-    with common.Session(30) as session, pytest.raises(common.Stopped, match="No new bobber"):
-        autofish.cast(session)
+    with common.Session(30) as session:
+        assert autofish.cast(session) is None
 
 
 def test_bobber_filter_excludes_other_entities():
@@ -503,7 +504,7 @@ def test_mining_stops_with_full_inventory():
 
 @pytest.mark.parametrize("heading", [(0, 1), (-1, 0), (0, -1), (1, 0)])
 def test_branch_route_returns_to_main_tunnel_after_every_pair(heading):
-    steps = branchmine.route(heading, length=12, spacing=3, branch=4)
+    steps = list(branchmine.route(heading, length=12, spacing=3, branch=4))
     assert len(steps) == 12 + 4 * 4 * 4
     x = z = 0
     for dx, dz in steps:
@@ -659,7 +660,7 @@ def test_branchmine_main_passes_a_finite_route_and_duration(monkeypatch):
     movement = Mock()
     monkeypatch.setattr(branchmine, "follow_steps", movement)
     branchmine.main(["8", "4", "2", "5"])
-    assert len(movement.call_args.args[0]) == 24
+    assert len(list(movement.call_args.args[0])) == 24
     assert movement.call_args.args[1] == 5
 
 
@@ -711,11 +712,11 @@ def test_pickupwatch_filters_out_other_players_pickups():
 @pytest.mark.parametrize(
     "module,args",
     [
-        (stripmine, []),
-        (stripmine, ["0"]),
-        (stripmine, ["129"]),
-        (branchmine, ["1"]),
-        (branchmine, ["0", "4", "4"]),
+        (stripmine, ["-1"]),
+        (stripmine, ["forever", "nan"]),
+        (stripmine, ["1", "2", "3"]),
+        (branchmine, ["1", "0"]),
+        (branchmine, ["0", "4", "0"]),
         (branchplan, []),
         (chunkcoords, ["extra"]),
         (bearing, ["nan", "1", "2"]),
@@ -751,3 +752,108 @@ def test_every_package_has_a_preserved_mit_notice():
         notice = (library.ROOT / package["folder"] / "LICENSE").read_text(encoding="utf-8")
         assert "Permission is hereby granted" in " ".join(notice.split())
         assert "THE SOFTWARE IS PROVIDED" in notice
+
+
+@pytest.mark.parametrize("args", [[], ["0"], ["0.0"], ["forever"], ["ENDLESS"], ["unlimited"]])
+def test_default_and_explicit_unlimited_durations(args):
+    assert common.duration(args) is None
+
+
+@pytest.mark.parametrize("seconds", ["0.5", "3601", "86400"])
+def test_positive_durations_have_no_arbitrary_hour_cap(seconds):
+    assert common.duration([seconds]) == float(seconds)
+
+
+@pytest.mark.parametrize("seconds", [None, 0])
+def test_unlimited_session_runs_past_a_day_and_still_cancels(monkeypatch, seconds):
+    with pytest.raises(common.Stopped, match="F8"), common.Session(seconds) as session:
+        monkeypatch.setattr(common.time, "monotonic", lambda: 86401)
+        session.check()
+        api.player_press_forward(True)
+        api.EventQueue.return_value.get.side_effect = [NS(key=297, action=1)]
+        session.check()
+    assert api.player_press_forward.call_args == call(False)
+
+
+@pytest.mark.parametrize("args", [[], ["0"], ["forever"], ["endless"]])
+def test_stripminer_defaults_to_a_lazy_endless_route(monkeypatch, args):
+    api.player_orientation.return_value = (0, 0)
+    movement = Mock()
+    monkeypatch.setattr(stripmine, "follow_steps", movement)
+    stripmine.main(args)
+    steps, seconds = movement.call_args.args
+    assert seconds is None
+    assert iter(steps) is steps
+    assert list(islice(steps, 10000)) == [(0, 1)] * 10000
+
+
+def test_stripminer_explicit_length_is_still_finite_without_old_128_block_cap(monkeypatch):
+    api.player_orientation.return_value = (0, 0)
+    movement = Mock()
+    monkeypatch.setattr(stripmine, "follow_steps", movement)
+    stripmine.main(["512"])
+    steps, seconds = movement.call_args.args
+    assert len(list(steps)) == 512
+    assert seconds is None
+
+
+def test_default_branchmine_continues_past_the_old_main_tunnel_cap(monkeypatch):
+    api.player_orientation.return_value = (0, 0)
+    movement = Mock()
+    monkeypatch.setattr(branchmine, "follow_steps", movement)
+    branchmine.main([])
+    steps, seconds = movement.call_args.args
+    assert seconds is None
+    prefix = list(islice(steps, 840))  # 30 complete 4-main-block cycles with 6-block branches.
+    assert len(prefix) == 840
+    assert tuple(map(sum, zip(*prefix, strict=True))) == (0, 120)
+    assert next(steps) == (0, 1)
+
+
+def test_branch_route_does_not_allocate_huge_branches():
+    steps = branchmine.route((0, 1), length=None, spacing=1, branch=10**12)
+    assert list(islice(steps, 3)) == [(0, 1), (1, 0), (1, 0)]
+
+
+def test_fishing_recasts_when_a_bobber_disappears(monkeypatch):
+    casting = Mock(return_value="own")
+    monkeypatch.setattr(autofish, "cast", casting)
+    monkeypatch.setattr(autofish, "bobbers", lambda: {})
+    with pytest.raises(common.Stopped, match="Time limit"):
+        autofish.main(["3"])
+    assert casting.call_count >= 2
+
+
+def test_fishing_retries_failed_casts_without_stopping(monkeypatch):
+    casting = Mock(return_value=None)
+    monkeypatch.setattr(autofish, "cast", casting)
+    with pytest.raises(common.Stopped, match="Time limit"):
+        autofish.main(["3"])
+    assert casting.call_count >= 2
+
+
+def test_fishing_recasts_after_ninety_seconds_without_a_bite(monkeypatch):
+    casting = Mock(return_value="own")
+    monkeypatch.setattr(autofish, "cast", casting)
+    monkeypatch.setattr(autofish, "bobbers", lambda: {"own": NS(velocity=(0, 0, 0))})
+    with pytest.raises(common.Stopped, match="Time limit"):
+        autofish.main(["100"])
+    assert casting.call_count >= 2
+    assert call(True) in api.player_press_use.call_args_list
+
+
+@pytest.mark.parametrize("terrain", ["minecraft:dirt", "minecraft:clay", "minecraft:gravel"])
+def test_miner_can_clear_ordinary_terrain_below_a_stable_ceiling(monkeypatch, terrain):
+    changes = {(0, 65, 1): terrain}
+    tunnel_world(changes)
+    api.player_position.return_value = (0.5, 64, 1.5)
+
+    def mine(session, pos, state):
+        changes[pos] = "minecraft:air"
+        return True
+
+    breaking = Mock(side_effect=mine)
+    monkeypatch.setattr(stripmine, "break_block", breaking)
+    with common.Session(30) as session:
+        stripmine.advance(session, (0, 64, 1))
+    breaking.assert_called_once()

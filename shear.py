@@ -18,6 +18,8 @@ def main(args):
         while True:
             session.check()
             require_item("minecraft:shears")
+            now = time.monotonic()
+            cooldowns = {uid: until for uid, until in cooldowns.items() if until > now}
             sheep = m.entities(type=r".*[.:]sheep", max_distance=3, sort="nearest")
             for entity in sheep:
                 if time.monotonic() < cooldowns.get(entity.uuid, 0):

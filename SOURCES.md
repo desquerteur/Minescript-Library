@@ -15,7 +15,7 @@ is a separate prerequisite; its files are not copied into this repository.
 - Snapshot SHA-256: `3f9f25083791ea57681417f0a4f999c4c3fe4e16dc6e04411c617eb5a58fd394`.
 - Original full license: [licenses/MsAutoFishing-MIT.txt](licenses/MsAutoFishing-MIT.txt).
 - Installed adaptation: `autofish.py`.
-- Changes: standard Minescript import, finite polling, input cleanup, stop
+- Changes: standard Minescript import, paced polling, input cleanup, stop
   controls, settling before bite detection, and binding a newly cast bobber.
   Removed the server-specific `/sellall` command and broken armor-stand check.
 
@@ -102,3 +102,11 @@ their own script instead of killing hardcoded job 1. Their unmodified originals 
 `stripmine.py`, `branchmine.py`, the catalog launcher, and the new maintained
 utility commands are original MIT additions. They were not copied from the
 unlicensed strip-mining script found during discovery.
+
+Maintained automation and watchers now run continuously by default. Explicit
+positive time/distance limits remain optional, while manual cancellation and
+hazard checks remain active. Strip/branch routes stream steps without growing
+an in-memory route list. Fishing retries transient cast/bobber failures and
+recasts after a stalled bite; sheep cooldown records expire during long runs.
+This continuous-mode change applies to maintained commands; imported community
+scripts retain their upstream defaults.

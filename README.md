@@ -20,28 +20,57 @@ command_path=.;Minescript-Library;system/exec
 The maintained commands can be run by their short names:
 
 ```text
-\stripmine 16 300
-\branchmine 16 4 6 600
+\stripmine
+\branchmine
 \branchplan 16 4 6
 \orescan 4
 \cropstatus 4
-\farm 300
+\farm
 ```
 
 For strip mining, stand on solid natural blocks, face the tunnel direction,
-and hold a pickaxe. `stripmine` digs a 1-block-wide, 2-block-high tunnel of the
-requested length. `branchmine LENGTH SPACING BRANCH [SECONDS]` adds paired
-side tunnels at each spacing interval and returns to the main tunnel.
-They stop on nearby detected fluids, unsupported floors/materials, falling
+and hold a pickaxe. `stripmine` continuously digs a 1-block-wide, 2-block-high
+tunnel in that direction. Plain `\branchmine` continuously extends
+the main tunnel, with paired 6-block side branches every 4 blocks, returning
+to the main tunnel after each pair.
+There is no default runtime or distance limit. They stop on nearby detected
+fluids, unsupported floors/materials, falling
 ceiling blocks, low health/damage, a changed tool, a full inventory, blocked
 movement, or their time limit. Checks cover the immediate next cell and its
 neighbors; they cannot guarantee protection against every cave hazard.
 They do not place torches, replace tools, or deposit inventory.
 
-**F8** or opening chat/a menu stops maintained timed scripts. Their default
-duration is 300 seconds, allowed range 1–3600. `\killjob -1` is the emergency
+**F8** or opening chat/a menu stops maintained automation and watchers.
+By default they run continuously. Omit the duration, or use `0`, `forever`,
+`endless`, or `unlimited` for no timer. Explicit positive durations still work,
+without the previous one-hour cap. `\killjob -1` is the emergency
 stop for all Minescript jobs. Run one movement/interaction automation at a time.
 Minecraft must remain responsive for script stop controls to work.
+
+## Optional limits and custom branches
+
+| Command | Behavior |
+| --- | --- |
+| `\stripmine` | Continuous straight tunnel |
+| `\branchmine` | Continuous; spacing 4, branch length 6 |
+| `\branchmine forever 5 12` | Continuous; spacing 5, branch length 12 |
+| `\stripmine 64` | Stop after 64 blocks, with no timer |
+| `\stripmine forever 600` | No distance limit; stop after 10 minutes |
+| `\farm` | Continuous crop farming |
+| `\autofish` | Continuous fishing with automatic recasting |
+
+A positive first argument to `stripmine`/`branchmine` remains an explicit finite
+main-tunnel length. A zero or `forever` first argument means unlimited length.
+`branchmine [LENGTH] [SPACING] [BRANCH] [SECONDS]` accepts omitted values with
+continuous/default settings. Read-only reports such as `inventory`, `orescan`,
+and `diagnose` still finish after printing their result. Community scripts
+retain their upstream behavior and individual stop controls.
+
+Fishing retries failed casts and lost bobbers. After 90 seconds without a bite
+it reels in and casts again. It still stops if the rod is missing or several
+new bobbers make ownership ambiguous. Put yourself away from other fishers.
+After updating, stop any already-running older jobs with `\killjob -1` and
+start the new command. Running jobs keep the code they loaded at startup.
 
 ## Search the library
 
@@ -50,7 +79,7 @@ Minecraft must remain responsive for script stop controls to work.
 \library list farming
 \library list camera
 \library info stripmine
-\library run stripmine 16 300
+\library run stripmine
 ```
 
 `list` searches IDs and descriptions and shows up to 30 results. Use a full ID
@@ -122,16 +151,16 @@ Use `\library info ID` for source and setup details, and
 
 | ID / file | What it does | Runtime and status |
 | --- | --- | --- |
-| [automine.py](automine.py) | Mine matching visible blocks while staying in place. Example: `\automine cobblestone 120`. | Python; maintained / offline checked / live test pending |
-| [farm.py](farm.py) | Harvest and replant ripe wheat, carrots, potatoes, and beetroot. Example: `\farm 300`. | Python; maintained / offline checked / live test pending |
-| [shear.py](shear.py) | Shear reachable sheep while holding shears. Example: `\shear 300`. | Python; maintained / offline checked / live test pending |
-| [autofish.py](autofish.py) | Cast, detect bobber dips, reel in, and recast while holding a rod. Example: `\autofish 300`. | Python; maintained / offline checked / live test pending |
+| [automine.py](automine.py) | Mine matching visible blocks while staying in place. Example: `\automine cobblestone`. | Python; maintained / offline checked / live test pending |
+| [farm.py](farm.py) | Continuously harvest and replant ripe wheat, carrots, potatoes, and beetroot. Example: `\farm`. | Python; maintained / offline checked / live test pending |
+| [shear.py](shear.py) | Continuously shear reachable sheep while holding shears. Example: `\shear`. | Python; maintained / offline checked / live test pending |
+| [autofish.py](autofish.py) | Fish continuously and recover from missed casts, lost bobbers, and stalled bites. Example: `\autofish`. | Python; maintained / offline checked / live test pending |
 | [inventory.py](inventory.py) | Count matching carried items and show available inventory slots. Example: `\inventory wheat`. | Python; maintained / offline checked / live test pending |
 | [nearby.py](nearby.py) | Locate nearby loaded animals, players, and dropped items. Example: `\nearby 16 sheep`. | Python; maintained / offline checked / live test pending |
 | [entityinfo.py](entityinfo.py) | Inspect the entity in your crosshair, including available health. Example: `\entityinfo 6`. | Python; maintained / offline checked / live test pending |
 | [diagnose.py](diagnose.py) | Display Minecraft, Minescript, Python, and loader versions. Example: `\diagnose`. | Python; maintained / offline checked / live test pending |
-| [stripmine.py](stripmine.py) | Strip mining: dig and walk a one-wide, two-high tunnel with bounded hazard checks. Example: `\stripmine 16 300`. | Python; maintained / offline checked / live test pending |
-| [branchmine.py](branchmine.py) | Branch mining: dig a main tunnel with paired side branches and return to the center. Example: `\branchmine 16 4 6 600`. | Python; maintained / offline checked / live test pending |
+| [stripmine.py](stripmine.py) | Strip mining: continuously dig and walk a one-wide, two-high tunnel. Optional limits. Example: `\stripmine`. | Python; maintained / offline checked / live test pending |
+| [branchmine.py](branchmine.py) | Branch mining: continuously extend a main tunnel with paired side branches. Example: `\branchmine`. | Python; maintained / offline checked / live test pending |
 | [chunkcoords.py](chunkcoords.py) | Show your current chunk and within-chunk coordinates. Example: `\chunkcoords`. | Python; maintained / offline checked / live test pending |
 | [bearing.py](bearing.py) | Calculate distance and aiming angles to an XYZ coordinate. Example: `\bearing 0 64 0`. | Python; maintained / offline checked / live test pending |
 | [regioncount.py](regioncount.py) | Count block types in a bounded selection without modifying it. Example: `\regioncount 0 60 0 8 64 8`. | Python; maintained / offline checked / live test pending |
@@ -139,9 +168,9 @@ Use `\library info ID` for source and setup details, and
 | [cropstatus.py](cropstatus.py) | Count ripe and still-growing crops near you. Example: `\cropstatus 4`. | Python; maintained / offline checked / live test pending |
 | [branchplan.py](branchplan.py) | Preview branch-tunnel endpoint coordinates without digging. Example: `\branchplan 16 4 6`. | Python; maintained / offline checked / live test pending |
 | [worldclock.py](worldclock.py) | Display the in-game clock, dimension, and weather. Example: `\worldclock`. | Python; maintained / offline checked / live test pending |
-| [blockwatch.py](blockwatch.py) | Report changes to the block targeted when the script starts. Example: `\blockwatch 300`. | Python; maintained / offline checked / live test pending |
-| [pickupwatch.py](pickupwatch.py) | Report item pickups by your own player. Example: `\pickupwatch 300`. | Python; maintained / offline checked / live test pending |
-| [inventorywatch.py](inventorywatch.py) | Report increases and decreases in carried item counts. Example: `\inventorywatch 300`. | Python; maintained / offline checked / live test pending |
+| [blockwatch.py](blockwatch.py) | Continuously report changes to the initially targeted block. Example: `\blockwatch`. | Python; maintained / offline checked / live test pending |
+| [pickupwatch.py](pickupwatch.py) | Continuously report item pickups by your own player. Example: `\pickupwatch`. | Python; maintained / offline checked / live test pending |
+| [inventorywatch.py](inventorywatch.py) | Continuously report increases and decreases in carried item counts. Example: `\inventorywatch`. | Python; maintained / offline checked / live test pending |
 | [equip.py](equip.py) | Find an item in carried storage and select it in the hotbar. Example: `\equip iron_pickaxe`. | Python; maintained / offline checked / live test pending |
 | [library.py](library.py) | Search, inspect, and explicitly launch entries in this catalog. Example: `\library list mining`. | Python; maintained / offline checked / live test pending |
 

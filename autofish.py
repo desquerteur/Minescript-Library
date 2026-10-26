@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Adapted from Thehatmans/MsAutoFishing, Copyright (c) 2026 Thehatmans.
 # See licenses/MsAutoFishing-MIT.txt and SOURCES.md.
-"""Auto-fish for up to five minutes: \\autofish [SECONDS]. Hold a fishing rod."""
+"""Auto-fish continuously: \\autofish [SECONDS|forever]. Hold a fishing rod."""
 
 import math
 import sys
@@ -34,7 +34,8 @@ def cast(session):
         # Ownership is not exposed by the API.
         if new and math.dist(m.player_position(), new[0].position) <= 4.5:
             return new[0].uuid
-    raise Stopped("No new bobber found. Reel in manually, aim at water, and restart.")
+    m.echo("No new bobber found; retrying the cast.")
+    return None
 
 
 def main(args):
@@ -44,6 +45,9 @@ def main(args):
         m.echo("Start with your rod reeled in; keep away from other fishing players.")
         while True:
             uid = cast(session)
+            if uid is None:
+                session.wait(1)
+                continue
             born = time.monotonic()
             settled = False
             while True:
@@ -51,7 +55,9 @@ def main(args):
                 require_item("minecraft:fishing_rod")
                 entity = bobbers().get(uid)
                 if entity is None:
-                    raise Stopped("The tracked bobber disappeared; restart to cast again.")
+                    m.echo("The tracked bobber disappeared; casting again.")
+                    session.wait(1)
+                    break
                 vx, vy, vz = entity.velocity
                 age = time.monotonic() - born
                 if age > 2 and abs(vy) < 0.02:
@@ -61,7 +67,10 @@ def main(args):
                     session.wait(0.7)
                     break
                 if age > 90:
-                    raise Stopped("No bite for 90 seconds. Check the water and restart.")
+                    m.echo("No bite for 90 seconds; reeling in and casting again.")
+                    session.use()
+                    session.wait(0.7)
+                    break
 
 
 if __name__ == "__main__":

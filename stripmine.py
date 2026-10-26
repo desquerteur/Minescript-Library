@@ -1,14 +1,24 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Minescript-Library contributors
-"""Dig and walk a 1-wide, 2-high tunnel: \\stripmine LENGTH [SECONDS]."""
+"""Mine continuously: \\stripmine [LENGTH|forever] [SECONDS|forever]. F8 stops."""
 
 import math
 import sys
 import time
+from itertools import repeat
 
 import minescript as m
 
-from automation_common import Session, Stopped, block_id, break_block, duration, held_item, run
+from automation_common import (
+    UNLIMITED,
+    Session,
+    Stopped,
+    block_id,
+    break_block,
+    duration,
+    held_item,
+    run,
+)
 
 AIR = {"minecraft:air", "minecraft:cave_air", "minecraft:void_air"}
 NATURAL = {
@@ -25,6 +35,11 @@ NATURAL = {
     "minecraft:basalt",
     "minecraft:smooth_basalt",
     "minecraft:blackstone",
+    "minecraft:dirt",
+    "minecraft:coarse_dirt",
+    "minecraft:rooted_dirt",
+    "minecraft:grass_block",
+    "minecraft:clay",
 }
 FALLING = {"minecraft:gravel", "minecraft:sand", "minecraft:red_sand"}
 DANGER = {
@@ -39,11 +54,18 @@ DANGER = {
 }
 
 
-def integer(text, label, maximum):
+def integer(text, label, maximum=None):
     number = int(text)
-    if not 1 <= number <= maximum:
-        raise ValueError(f"{label} must be between 1 and {maximum}.")
+    if number < 1 or maximum is not None and number > maximum:
+        bound = f"between 1 and {maximum}" if maximum is not None else "positive"
+        raise ValueError(f"{label} must be {bound}.")
     return number
+
+
+def length_limit(text=None):
+    if text is None or str(text).strip().casefold() in UNLIMITED:
+        return None
+    return integer(text, "Length")
 
 
 def direction(yaw):
@@ -109,7 +131,7 @@ def advance(session, cell):
         state = states[pos]
         if block_id(state) in AIR:
             continue
-        if not natural(state):
+        if not natural(state) and block_id(state) not in FALLING:
             raise Stopped(f"Unsupported block in the tunnel at {pos}: {state}")
         if not break_block(session, pos, state):
             raise Stopped("Could not safely reach or break the next tunnel block.")
@@ -158,12 +180,13 @@ def follow_steps(steps, seconds):
 
 
 def main(args):
-    if not 1 <= len(args) <= 2:
-        raise ValueError("Usage: \\stripmine LENGTH [SECONDS]; length 1-128.")
-    length = integer(args[0], "Length", 128)
+    if len(args) > 2:
+        raise ValueError("Usage: \\stripmine [LENGTH|forever] [SECONDS|forever]")
+    length = length_limit(args[0] if args else None)
     seconds = duration(args[1:])
     heading = direction(m.player_orientation()[0])
-    follow_steps([heading] * length, seconds)
+    steps = repeat(heading) if length is None else repeat(heading, length)
+    follow_steps(steps, seconds)
 
 
 if __name__ == "__main__":
