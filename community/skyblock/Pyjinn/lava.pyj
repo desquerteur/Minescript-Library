@@ -1,0 +1,173 @@
+#!python
+from system.pyj.minescript import *
+import minescript as m
+
+# Java Class Bindings via Pyjinn
+Minecraft = JavaClass("net.minecraft.client.Minecraft")
+Blocks = JavaClass("net.minecraft.world.level.block.Blocks")
+MutableBlockPos = JavaClass("net.minecraft.core.BlockPos$MutableBlockPos")
+Fluids = JavaClass("net.minecraft.world.level.material.Fluids")
+
+# Rendering Bindings
+Gizmos = JavaClass("net.minecraft.gizmos.Gizmos")
+GizmoStyle = JavaClass("net.minecraft.gizmos.GizmoStyle")
+AABB = JavaClass("net.minecraft.world.phys.AABB")
+ARGB = JavaClass("net.minecraft.util.ARGB")
+
+mc = Minecraft.getInstance()
+mutable_pos = MutableBlockPos()
+
+# --- Optional legacy fallback ---
+try:
+    FLOWING_LAVA_BLOCK = Blocks.FLOWING_LAVA
+except:
+    FLOWING_LAVA_BLOCK = None
+
+# Color configurations
+lava_high_box = GizmoStyle.strokeAndFill(ARGB.color(255, 0, 100, 255), JavaFloat(1.5), ARGB.color(50, 0, 100, 255))
+lava_mid_box  = GizmoStyle.strokeAndFill(ARGB.color(255, 255, 50, 50), JavaFloat(1.5), ARGB.color(50, 255, 50, 50))
+
+# Y-level thresholds
+Y_MIN_SCAN, Y_MAX_SCAN = 63, 187
+
+# 8 chunks * 16 blocks = 128 block radius
+RENDER_DISTANCE_BLOCKS = 128
+
+# Fixed boundary box constraints (Corner 1: 560, 513 | Corner 2: 823, 823)
+BOUND_X_MIN, BOUND_X_MAX = min(560, 823), max(560, 823)
+BOUND_Z_MIN, BOUND_Z_MAX = min(513, 823), max(513, 823)
+
+cached_render_boxes = []
+scan_finished = True
+scanner_instance = None
+
+
+def get_blockstate_fast(x, y, z):
+    """Returns the BlockState at (x, y, z), or None if no level is loaded."""
+    if mc.level is None:
+        return None
+    return mc.level.getBlockState(mutable_pos.set(x, y, z))
+
+
+def is_lava_fast(x, y, z):
+    """Returns True if the block at (x, y, z) is lava - source OR flowing."""
+    state = get_blockstate_fast(x, y, z)
+    if state is None:
+        return False
+
+    try:
+        fluid_type = state.getFluidState().getType()
+        return fluid_type == Fluids.LAVA or fluid_type == Fluids.FLOWING_LAVA
+    except:
+        block = state.getBlock()
+        if block == Blocks.LAVA:
+            return True
+        if FLOWING_LAVA_BLOCK is not None and block == FLOWING_LAVA_BLOCK:
+            return True
+        return False
+
+
+def background_lava_scanner(player_x, player_z):
+    """
+    Scans the intersection of the 8-chunk radius and the specified bounding box:
+    - Corner 1: (560, 513)
+    - Corner 2: (823, 823)
+    """
+    # Calculate intersection between 8-chunk render distance and fixed bounds
+    scan_x_min = max(player_x - RENDER_DISTANCE_BLOCKS, BOUND_X_MIN)
+    scan_x_max = min(player_x + RENDER_DISTANCE_BLOCKS, BOUND_X_MAX)
+    scan_z_min = max(player_z - RENDER_DISTANCE_BLOCKS, BOUND_Z_MIN)
+    scan_z_max = min(player_z + RENDER_DISTANCE_BLOCKS, BOUND_Z_MAX)
+
+    # Check if player is completely out of reach of the target area
+    if scan_x_min > scan_x_max or scan_z_min > scan_z_max:
+        echo("§c[RADAR] Out of range! Target box is outside your 8-chunk radius.")
+        yield True
+        return
+
+    echo(f"§e[RADAR] Scanning bounded area (X: {scan_x_min} to {scan_x_max}, Z: {scan_z_min} to {scan_z_max})...")
+
+    blocks_per_tick = 50000
+    blocks_scanned_this_tick = 0
+    match_count = 0
+
+    for x in range(scan_x_min, scan_x_max + 1):
+        for z in range(scan_z_min, scan_z_max + 1):
+
+            for y in range(Y_MIN_SCAN, Y_MAX_SCAN + 1):
+                if is_lava_fast(x, y, z):
+                    # Blue Box (High Lava)
+                    if y >= 65:
+                        box = AABB(JavaFloat(x), JavaFloat(y), JavaFloat(z),
+                                   JavaFloat(x + 1.0), JavaFloat(y + 1.0), JavaFloat(z + 1.0))
+                        cached_render_boxes.append((box, lava_high_box))
+                        match_count += 1
+
+                    # Red Box (Mid-level Lava)
+                    elif y == 63 or y == 64:
+                        if not is_lava_fast(x, y + 1, z) and not is_lava_fast(x, y - 1, z):
+
+                            # Attempt +X pair
+                            if is_lava_fast(x + 1, y, z):
+                                if not is_lava_fast(x + 1, y + 1, z) and not is_lava_fast(x + 1, y - 1, z):
+                                    box = AABB(JavaFloat(x), JavaFloat(y), JavaFloat(z),
+                                               JavaFloat(x + 2.0), JavaFloat(y + 1.0), JavaFloat(z + 1.0))
+                                    cached_render_boxes.append((box, lava_mid_box))
+                                    match_count += 1
+
+                            # Attempt +Z pair
+                            if is_lava_fast(x, y, z + 1):
+                                if not is_lava_fast(x, y + 1, z + 1) and not is_lava_fast(x, y - 1, z + 1):
+                                    box = AABB(JavaFloat(x), JavaFloat(y), JavaFloat(z),
+                                               JavaFloat(x + 1.0), JavaFloat(y + 1.0), JavaFloat(z + 2.0))
+                                    cached_render_boxes.append((box, lava_mid_box))
+                                    match_count += 1
+
+                blocks_scanned_this_tick += 1
+
+                if blocks_scanned_this_tick >= blocks_per_tick:
+                    yield False
+                    blocks_scanned_this_tick = 0
+
+    echo(f"§a§l[RADAR] §rScan complete! Found {match_count} valid segments/blocks.")
+    echo("§lCOLOR SCHEME")
+    echo("§1█§r: Worm Fishing")
+    echo("§4█§r: Magma Core Fishing")
+    yield True
+
+
+def start_scan(event):
+    """Press Mouse Button 4 to trigger the scan."""
+    global scan_finished, scanner_instance, cached_render_boxes
+
+    if event.button == 3 and event.action == 1:
+        if mc.player is not None:
+            cached_render_boxes.clear()
+            ppos = mc.player.position()
+            scanner_instance = background_lava_scanner(int(ppos.x), int(ppos.z))
+            scan_finished = False
+
+
+def on_tick(event):
+    global scan_finished
+    if not scan_finished and scanner_instance is not None:
+        try:
+            if next(scanner_instance) == True:
+                scan_finished = True
+        except StopIteration:
+            scan_finished = True
+
+
+def on_render(event):
+    for box, style in cached_render_boxes:
+        try:
+            Gizmos.cuboid(box, style).setAlwaysOnTop()
+        except:
+            pass
+
+
+add_event_listener("tick", on_tick)
+add_event_listener("render", on_render)
+add_event_listener("mouse", start_scan)
+
+m.echo("§d[RADAR Ready] Click Mouse Button 4 to scan inside target box.")

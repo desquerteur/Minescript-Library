@@ -1,0 +1,65 @@
+from minescript import (
+    remove_event_listener,
+    add_event_listener,
+    player_orientation,
+    player_set_orientation,
+)
+
+
+class Camera:
+    def __init__(self):
+        self.listener = None
+        self.set_goal(0, 0, 0)
+
+    def set_goal(self, yaw, pitch, ms):
+        start = player_orientation()
+        self.start_yaw = start[0]
+        self.start_pitch = start[1]
+
+        self.goal_yaw = yaw
+        self.goal_pitch = pitch
+        self.goal_s = ms / 1000
+        self.goal_start = None
+
+        if self.listener is not None:
+            remove_event_listener(self.listener)
+        self.listener = add_event_listener("render", lambda x: self.update(x))
+
+    def update(self, event):
+        now = event.time
+        if self.goal_start is None:
+            self.goal_start = now
+        elapsed = now - self.goal_start
+        progress = elapsed / self.goal_s
+
+        easing = self.ease(progress)
+        if progress > 1:
+            easing = 1
+
+        yaw = (self.goal_yaw - self.start_yaw) * easing + self.start_yaw
+        pitch = (self.goal_pitch - self.start_pitch) * easing + self.start_pitch
+        player_set_orientation(yaw, pitch)
+
+        if progress > 1:
+            remove_event_listener(self.listener)
+
+    def ease(self, t):
+        # in ease out quad
+        t *= 2
+        if t < 1:
+            return t * t / 2
+        else:
+            t -= 1
+            return -(t * (t - 2) - 1) / 2
+
+
+def demo():
+    camera = Camera()
+    camera.set_goal(0, 0, 0)
+
+    # (yaw, pitch, ms)
+    camera.set_goal(90, 30, 2000)
+
+if __name__ == "__main__":
+    demo()
+

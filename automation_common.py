@@ -109,6 +109,7 @@ class Session:
         for cleanup in (
             lambda: m.player_press_attack(False),
             lambda: m.player_press_use(False),
+            lambda: m.player_press_forward(False),
             self.events.unregister_all,
         ):
             try:

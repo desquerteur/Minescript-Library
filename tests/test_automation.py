@@ -3,7 +3,7 @@
 import queue
 import sys
 from types import SimpleNamespace as NS
-from unittest.mock import Mock, call
+from unittest.mock import MagicMock, Mock, call
 
 import pytest
 
@@ -13,12 +13,27 @@ sys.modules["minescript"] = api
 import autofish  # noqa: E402
 import automation_common as common  # noqa: E402
 import automine  # noqa: E402
+import bearing  # noqa: E402
+import blockwatch  # noqa: E402
+import branchmine  # noqa: E402
+import branchplan  # noqa: E402
+import chunkcoords  # noqa: E402
+import cropstatus  # noqa: E402
 import diagnose  # noqa: E402
 import entityinfo  # noqa: E402
+import equip  # noqa: E402
 import farm  # noqa: E402
 import inventory  # noqa: E402
+import inventorywatch  # noqa: E402
+import library  # noqa: E402
+import library_tools  # noqa: E402
 import nearby  # noqa: E402
+import orescan  # noqa: E402
+import pickupwatch  # noqa: E402
+import regioncount  # noqa: E402
 import shear  # noqa: E402
+import stripmine  # noqa: E402
+import worldclock  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -388,3 +403,351 @@ def test_readme_catalog_lists_all_commands_and_shared_helper():
     readme = (root / "README.md").read_text(encoding="utf-8")
     for script in root.glob("*.py"):
         assert f"[{script.name}]({script.name})" in readme, f"Missing catalog entry: {script.name}"
+
+
+def tunnel_world(changes=None):
+    changes = changes or {}
+
+    def blocks(positions):
+        return [
+            changes.get(tuple(pos), "minecraft:stone" if pos[1] == 63 else "minecraft:air")
+            for pos in positions
+        ]
+
+    api.getblocklist.side_effect = blocks
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        "minecraft:lava",
+        "minecraft:water",
+        "minecraft:fire",
+        "minecraft:oak_stairs[waterlogged=true]",
+    ],
+)
+def test_tunnel_survey_rejects_nearby_hazards_before_any_input(state):
+    tunnel_world({(1, 64, 1): state})
+    with pytest.raises(common.Stopped, match="Hazard"):
+        stripmine.survey((0, 64, 1))
+    api.player_press_forward.assert_not_called()
+    api.player_press_attack.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "floor",
+    ["minecraft:air", "minecraft:water", "minecraft:gravel", "minecraft:oak_slab[type=bottom]"],
+)
+def test_tunnel_rejects_unsupported_floor(floor):
+    tunnel_world({(0, 63, 1): floor})
+    with pytest.raises(common.Stopped):
+        stripmine.survey((0, 64, 1))
+
+
+@pytest.mark.parametrize(
+    "ceiling",
+    [
+        "minecraft:gravel",
+        "minecraft:sand",
+        "minecraft:red_sand",
+        "minecraft:red_concrete_powder",
+        "minecraft:anvil",
+    ],
+)
+def test_tunnel_rejects_falling_ceiling(ceiling):
+    tunnel_world({(0, 66, 1): ceiling})
+    with pytest.raises(common.Stopped, match="Falling"):
+        stripmine.survey((0, 64, 1))
+
+
+def test_clear_tunnel_step_releases_forward():
+    tunnel_world()
+    api.player_position.side_effect = [(0.5, 64, 0.5), (0.5, 64, 1.5)]
+    with common.Session(30) as session:
+        stripmine.advance(session, (0, 64, 1))
+        assert api.player_press_forward.call_args_list.count(call(True)) == 1
+        assert api.player_press_forward.call_args == call(False)
+
+
+def test_tunnel_stops_on_blocked_movement_and_releases_forward():
+    tunnel_world()
+    api.player_position.return_value = (0.5, 64, 0.5)
+    with common.Session(30) as session, pytest.raises(common.Stopped, match="Movement blocked"):
+        stripmine.advance(session, (0, 64, 1))
+    assert api.player_press_forward.call_args == call(False)
+
+
+def test_tunnel_will_not_mine_a_container():
+    tunnel_world({(0, 65, 1): "minecraft:chest[facing=north]"})
+    with common.Session(30) as session, pytest.raises(common.Stopped, match="Unsupported block"):
+        stripmine.advance(session, (0, 64, 1))
+    assert call(True) not in api.player_press_attack.call_args_list
+
+
+def test_mining_stops_when_pickaxe_is_missing():
+    with stripmine.MiningSession(30) as session, pytest.raises(common.Stopped, match="pickaxe"):
+        session.check()
+
+
+def test_mining_stops_with_full_inventory():
+    api.player_hand_items.return_value = NS(
+        main_hand={"item": "minecraft:iron_pickaxe", "count": 1}
+    )
+    api.player_inventory.return_value = [NS(slot=slot, count=64) for slot in range(36)]
+    with (
+        stripmine.MiningSession(30) as session,
+        pytest.raises(common.Stopped, match="Inventory is full"),
+    ):
+        session.check()
+
+
+@pytest.mark.parametrize("heading", [(0, 1), (-1, 0), (0, -1), (1, 0)])
+def test_branch_route_returns_to_main_tunnel_after_every_pair(heading):
+    steps = branchmine.route(heading, length=12, spacing=3, branch=4)
+    assert len(steps) == 12 + 4 * 4 * 4
+    x = z = 0
+    for dx, dz in steps:
+        x += dx
+        z += dz
+    assert (x, z) == (12 * heading[0], 12 * heading[1])
+
+
+@pytest.mark.parametrize(
+    "yaw,expected", [(0, (0, 1)), (90, (-1, 0)), (180, (0, -1)), (-90, (1, 0)), (360, (0, 1))]
+)
+def test_mining_uses_minecraft_cardinal_directions(yaw, expected):
+    assert stripmine.direction(yaw) == expected
+
+
+def test_volume_limit_is_enforced_before_query():
+    with pytest.raises(ValueError, match="too large"):
+        library_tools.volume((0, 0, 0), (100, 100, 100))
+    api.getblocklist.assert_not_called()
+
+
+def test_block_count_accepts_reversed_selection():
+    api.getblocklist.return_value = ["minecraft:stone", "minecraft:stone", "minecraft:air"]
+    regioncount.main(["2", "64", "0", "0", "64", "0"])
+    assert call("minecraft:stone: 2") in api.echo.call_args_list
+
+
+def test_chunk_coordinates_floor_negative_positions():
+    api.player_position.return_value = (-0.1, 64, -16.1)
+    chunkcoords.main([])
+    assert call("Chunk: -1, -2; local block: 15, 15") in api.echo.call_args_list
+
+
+def test_bearing_to_east_has_negative_ninety_yaw():
+    bearing.main(["10", "65.62", "0"])
+    assert "yaw -90.0" in api.echo.call_args.args[0]
+
+
+def test_equip_uses_existing_hotbar_slot_first():
+    api.player_inventory.return_value = [
+        NS(item="minecraft:iron_pickaxe", count=1, slot=9),
+        NS(item="minecraft:iron_pickaxe", count=1, slot=2),
+    ]
+    equip.main(["iron_pickaxe"])
+    api.player_inventory_slot_to_hotbar.assert_not_called()
+    api.player_inventory_select_slot.assert_called_once_with(2)
+
+
+def test_clock_converts_midnight_correctly():
+    api.world_info.return_value = NS(
+        day_ticks=18000, raining=False, thundering=False, dimension="overworld"
+    )
+    worldclock.main([])
+    assert "00:00" in api.echo.call_args_list[0].args[0]
+
+
+def test_crop_status_counts_ripe_and_growing_separately(monkeypatch):
+    monkeypatch.setattr(
+        cropstatus,
+        "around",
+        lambda radius: [
+            ((0, 64, 0), "minecraft:wheat[age=7]"),
+            ((1, 64, 0), "minecraft:wheat[age=2]"),
+        ],
+    )
+    cropstatus.main(["2"])
+    api.echo.assert_called_once_with("minecraft:wheat: 1 ripe, 1 growing")
+
+
+def test_ore_scan_excludes_ordinary_stone(monkeypatch):
+    monkeypatch.setattr(
+        orescan,
+        "around",
+        lambda radius: [((0, 64, 0), "minecraft:stone"), ((1, 64, 0), "minecraft:diamond_ore")],
+    )
+    orescan.main(["2"])
+    assert "minecraft:diamond_ore" in api.echo.call_args_list[0].args[0]
+    assert "1 ore blocks" in api.echo.call_args.args[0]
+
+
+def test_branch_preview_never_sends_game_commands():
+    api.player_position.return_value = (0.5, 64, 0.5)
+    api.player_orientation.return_value = (0, 0)
+    branchplan.main(["8", "4", "3"])
+    api.execute.assert_not_called()
+    api.player_press_forward.assert_not_called()
+
+
+def test_catalog_contains_over_100_distinct_programs_with_valid_hashes():
+    import ast
+    import hashlib
+
+    catalog = library.load_catalog()
+    entries = catalog["entries"]
+    assert len({entry["id"] for entry in entries}) == len(entries)
+    programs = [entry for entry in entries if entry["kind"] != "support"]
+    assert len(programs) > 100
+    assert len(programs) == catalog["counts"]["programs"]
+    fingerprints = []
+    for entry in entries:
+        assert entry["license"] == "MIT"
+        path = library.script_path(entry)
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == entry["sha256"]
+        tree = ast.parse(path.read_text(encoding="utf-8-sig"))
+        if entry["kind"] != "support":
+            fingerprints.append(ast.dump(tree, include_attributes=False))
+    assert len(set(fingerprints)) == len(fingerprints)
+
+
+def test_catalog_rejects_path_traversal():
+    with pytest.raises(ValueError, match="Invalid catalog path"):
+        library.script_path({"path": "../../outside.py"})
+
+
+def test_catalog_rejects_changed_script_hash():
+    with pytest.raises(ValueError, match="changed"):
+        library.script_path({"path": "library.py", "sha256": "wrong"})
+
+
+def test_launcher_preserves_arguments_without_executing_them(monkeypatch):
+    def launched(path, run_name):
+        assert sys.argv[1:] == ["hello; unsafe", '"quoted"']
+        assert run_name == "__main__"
+
+    monkeypatch.setattr(library.runpy, "run_path", launched)
+    original_args = sys.argv[:]
+    library.launch(
+        library.find_entry(library.load_catalog()["entries"], "diagnose"),
+        ["hello; unsafe", '"quoted"'],
+    )
+    assert sys.argv == original_args
+    api.execute.assert_not_called()
+
+
+def test_stripmine_main_follows_the_requested_cardinal_route(monkeypatch):
+    api.player_hand_items.return_value = NS(
+        main_hand={"item": "minecraft:iron_pickaxe", "count": 1}
+    )
+    api.player_inventory.return_value = []
+    api.player_orientation.return_value = (90, 0)
+    movement = Mock()
+    monkeypatch.setattr(stripmine, "advance", movement)
+    stripmine.main(["3", "5"])
+    assert [item.args[1] for item in movement.call_args_list] == [
+        (-1, 64, 0),
+        (-2, 64, 0),
+        (-3, 64, 0),
+    ]
+
+
+def test_branchmine_main_passes_a_finite_route_and_duration(monkeypatch):
+    api.player_orientation.return_value = (0, 0)
+    movement = Mock()
+    monkeypatch.setattr(branchmine, "follow_steps", movement)
+    branchmine.main(["8", "4", "2", "5"])
+    assert len(movement.call_args.args[0]) == 24
+    assert movement.call_args.args[1] == 5
+
+
+def test_blockwatch_reports_changes_and_stops_on_its_deadline():
+    api.player_get_targeted_block.return_value = NS(position=(1, 64, 0))
+    api.getblock.side_effect = lambda *args: (
+        "minecraft:air" if common.time.monotonic() >= 0.25 else "minecraft:stone"
+    )
+    with pytest.raises(common.Stopped, match="Time limit"):
+        blockwatch.main(["1"])
+    assert any("stone -> minecraft:air" in item.args[0] for item in api.echo.call_args_list)
+
+
+def test_inventorywatch_reports_supply_deltas():
+    api.player_inventory.side_effect = lambda: [
+        NS(item="minecraft:stone", slot=0, count=5 if common.time.monotonic() >= 0.5 else 1)
+    ]
+    with pytest.raises(common.Stopped, match="Time limit"):
+        inventorywatch.main(["1"])
+    assert call("minecraft:stone: +4; now 5") in api.echo.call_args_list
+
+
+def test_pickupwatch_filters_out_other_players_pickups():
+    pickups, keys = MagicMock(), Mock()
+    pickups.__enter__.return_value = pickups
+    keys.get.side_effect = queue.Empty
+    items = iter(
+        [
+            NS(player_uuid="own", amount=2, item=NS(name="Iron")),
+            NS(player_uuid="other", amount=99, item=NS(name="Gold")),
+        ]
+    )
+
+    def next_pickup(**kwargs):
+        try:
+            return next(items)
+        except StopIteration:
+            raise queue.Empty from None
+
+    pickups.get.side_effect = next_pickup
+    api.EventQueue.side_effect = [pickups, keys]
+    api.player.return_value = NS(uuid="own")
+    with pytest.raises(common.Stopped, match="Time limit"):
+        pickupwatch.main(["1"])
+    assert call("Picked up 2: Iron") in api.echo.call_args_list
+    assert not any("Gold" in item.args[0] for item in api.echo.call_args_list)
+
+
+@pytest.mark.parametrize(
+    "module,args",
+    [
+        (stripmine, []),
+        (stripmine, ["0"]),
+        (stripmine, ["129"]),
+        (branchmine, ["1"]),
+        (branchmine, ["0", "4", "4"]),
+        (branchplan, []),
+        (chunkcoords, ["extra"]),
+        (bearing, ["nan", "1", "2"]),
+        (regioncount, ["1"]),
+        (cropstatus, ["0"]),
+        (worldclock, ["extra"]),
+        (equip, []),
+    ],
+)
+def test_new_commands_reject_invalid_input_without_world_changes(module, args):
+    with pytest.raises(ValueError):
+        module.main(args)
+    api.execute.assert_not_called()
+    api.player_press_forward.assert_not_called()
+    api.player_press_attack.assert_not_called()
+
+
+def test_catalog_can_be_searched_and_inspected_without_launching():
+    library.main(["list", "mining"])
+    assert any("stripmine" in item.args[0] for item in api.echo.call_args_list)
+    library.main(["info", "stripmine"])
+    api.execute.assert_not_called()
+
+
+def test_support_module_cannot_be_launched():
+    entry = library.find_entry(library.load_catalog()["entries"], "library_tools")
+    with pytest.raises(ValueError, match="support module"):
+        library.launch(entry, [])
+
+
+def test_every_package_has_a_preserved_mit_notice():
+    for package in library.load_catalog()["packages"]:
+        notice = (library.ROOT / package["folder"] / "LICENSE").read_text(encoding="utf-8")
+        assert "Permission is hereby granted" in " ".join(notice.split())
+        assert "THE SOFTWARE IS PROVIDED" in notice

@@ -2,4 +2,6 @@
 *.py text eol=lf
 *.md text eol=lf
 *.toml text eol=lf
-upstream/*.txt -text -whitespace
+upstream/** -text -whitespace
+community/** -text -whitespace
+examples/** -text -whitespace

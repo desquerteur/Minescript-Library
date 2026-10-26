@@ -1,0 +1,265 @@
+{
+    "functions": [
+        "execute",
+        "echo",
+        "echo_json",
+        "chat",
+        "log",
+        "screenshot",
+        "job_info",
+        "_job_info_result_transform",
+        "flush",
+        "player_name",
+        "player_position",
+        "player_hand_items",
+        "_player_hand_items_result_transform",
+        "player_inventory",
+        "_player_inventory_result_transform",
+        "player_inventory_slot_to_hotbar",
+        "player_inventory_select_slot",
+        "press_key_bind",
+        "player_press_forward",
+        "player_press_backward",
+        "player_press_left",
+        "player_press_right",
+        "player_press_jump",
+        "player_press_sprint",
+        "player_press_sneak",
+        "player_press_pick_item",
+        "player_press_use",
+        "player_press_attack",
+        "player_press_swap_hands",
+        "player_press_drop",
+        "player_orientation",
+        "player_set_orientation",
+        "player_get_targeted_block",
+        "_player_get_targeted_block_result_transform",
+        "player_get_targeted_entity",
+        "_player_get_targeted_entity_result_transform",
+        "player_health",
+        "player",
+        "_player_result_transform",
+        "players",
+        "_players_result_transform",
+        "entities",
+        "_entities_result_transform",
+        "version_info",
+        "_version_info_result_transform",
+        "world_info",
+        "_world_info_result_transform",
+        "getblock",
+        "getblocklist",
+        "get_block_region",
+        "_get_block_region_result_transform",
+        "await_loaded_region",
+        "_register_key_listener",
+        "_register_mouse_listener",
+        "_register_chat_message_listener",
+        "_register_chat_message_interceptor",
+        "_register_add_entity_listener",
+        "_register_block_update_listener",
+        "_register_take_item_listener",
+        "_register_damage_listener",
+        "_register_explosion_listener",
+        "_register_chunk_listener",
+        "_unregister_event_handler",
+        "set_default_executor",
+        "_create_add_entity_event",
+        "_create_take_item_event",
+        "KeyEventListener",
+        "ChatEventListener",
+        "screen_name",
+        "show_chat_screen",
+        "append_chat_history",
+        "chat_input",
+        "set_chat_input",
+        "container_get_items",
+        "_container_get_items_result_transform",
+        "player_look_at",
+        "combine_rotations",
+        "_blockpack_read_world",
+        "_blockpack_read_file",
+        "_blockpack_import_data",
+        "_blockpack_block_bounds",
+        "_blockpack_comments",
+        "_blockpack_write_world",
+        "_blockpack_write_file",
+        "_blockpack_export_data",
+        "_blockpack_delete",
+        "_blockpacker_create",
+        "_blockpacker_add_blocks",
+        "_blockpacker_add_blockpack",
+        "_blockpacker_pack",
+        "_blockpacker_delete",
+        "_pos_subtract",
+        "java_class",
+        "java_string",
+        "java_double",
+        "java_float",
+        "java_long",
+        "java_int",
+        "java_bool",
+        "java_ctor",
+        "java_new_instance",
+        "java_member",
+        "java_access_field",
+        "java_call_method",
+        "java_call_script_function",
+        "java_array_length",
+        "java_array_index",
+        "java_new_array",
+        "java_to_string",
+        "java_assign",
+        "java_field_names",
+        "java_method_names",
+        "java_release"
+    ],
+    "classes": {
+        "MinescriptRuntimeOptions": {
+            "functions": [],
+            "classes": {}
+        },
+        "JobInfo": {
+            "functions": [],
+            "classes": {}
+        },
+        "ItemStack": {
+            "functions": [],
+            "classes": {}
+        },
+        "HandItems": {
+            "functions": [],
+            "classes": {}
+        },
+        "TargetedBlock": {
+            "functions": [
+                "__getitem__"
+            ],
+            "classes": {}
+        },
+        "EntityData": {
+            "functions": [],
+            "classes": {}
+        },
+        "VersionInfo": {
+            "functions": [],
+            "classes": {}
+        },
+        "WorldInfo": {
+            "functions": [],
+            "classes": {}
+        },
+        "BlockRegion": {
+            "functions": [
+                "__init__",
+                "get_block",
+                "get_index"
+            ],
+            "classes": {}
+        },
+        "_EventType": {
+            "functions": [],
+            "classes": {}
+        },
+        "KeyEvent": {
+            "functions": [],
+            "classes": {}
+        },
+        "MouseEvent": {
+            "functions": [],
+            "classes": {}
+        },
+        "ChatEvent": {
+            "functions": [],
+            "classes": {}
+        },
+        "AddEntityEvent": {
+            "functions": [],
+            "classes": {}
+        },
+        "BlockUpdateEvent": {
+            "functions": [],
+            "classes": {}
+        },
+        "TakeItemEvent": {
+            "functions": [],
+            "classes": {}
+        },
+        "DamageEvent": {
+            "functions": [],
+            "classes": {}
+        },
+        "ExplosionEvent": {
+            "functions": [],
+            "classes": {}
+        },
+        "ChunkEvent": {
+            "functions": [],
+            "classes": {}
+        },
+        "WorldEvent": {
+            "functions": [],
+            "classes": {}
+        },
+        "EventQueue": {
+            "functions": [
+                "__init__",
+                "register_key_listener",
+                "register_mouse_listener",
+                "register_chat_listener",
+                "register_outgoing_chat_interceptor",
+                "register_add_entity_listener",
+                "register_block_update_listener",
+                "register_take_item_listener",
+                "register_damage_listener",
+                "register_explosion_listener",
+                "register_chunk_listener",
+                "register_world_listener",
+                "_register",
+                "unregister_all",
+                "get",
+                "__enter__",
+                "__exit__",
+                "__del__"
+            ],
+            "classes": {}
+        },
+        "Rotations": {
+            "functions": [],
+            "classes": {}
+        },
+        "BlockPack": {
+            "functions": [
+                "__init__",
+                "read_world",
+                "read_file",
+                "import_data",
+                "block_bounds",
+                "comments",
+                "write_world",
+                "write_file",
+                "export_data",
+                "visit_blocks",
+                "__del__"
+            ],
+            "classes": {}
+        },
+        "BlockPackerException": {
+            "functions": [],
+            "classes": {}
+        },
+        "BlockPacker": {
+            "functions": [
+                "__init__",
+                "_get_block_id",
+                "setblock",
+                "fill",
+                "_flush_blocks",
+                "add_blockpack",
+                "pack",
+                "__del__"
+            ],
+            "classes": {}
+        }
+    }
+}

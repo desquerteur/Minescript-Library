@@ -1,0 +1,2976 @@
+{
+  "format_version": 1,
+  "license": "MIT",
+  "entries": [
+    {
+      "id": "official-timer-v1-timer",
+      "name": "timer",
+      "path": "community/official/timer/v1/timer.py",
+      "package": "official",
+      "kind": "command",
+      "description": "Schedule or repeat chat messages, local messages, or Minecraft commands.",
+      "license": "MIT",
+      "source": "https://github.com/maxuser0/minescript-scripts/blob/874536fe0a65068721559b56eaab8d652ce449ba/timer/v1/timer.py",
+      "revision": "874536fe0a65068721559b56eaab8d652ce449ba",
+      "sha256": "11eaf207af67e4c54bdb685fafa02e341533bb8a7906e0724e803f04c82bd9d0",
+      "runtime": "Python",
+      "imports": [
+        "builtins",
+        "datetime",
+        "eval",
+        "minescript",
+        "re",
+        "sys",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "official-sphere-v2-sphere",
+      "name": "sphere",
+      "path": "community/official/sphere/v2/sphere.py",
+      "package": "official",
+      "kind": "command",
+      "description": "Build a hollow sphere from blocks; requires creative command permissions.",
+      "license": "MIT",
+      "source": "https://github.com/maxuser0/minescript-scripts/blob/874536fe0a65068721559b56eaab8d652ce449ba/sphere/v2/sphere.py",
+      "revision": "874536fe0a65068721559b56eaab8d652ce449ba",
+      "sha256": "1242a09604a461354204cc27c34f902f01760cf5542cd267ca5129049d8c56b9",
+      "runtime": "Python",
+      "imports": [
+        "math",
+        "minescript",
+        "sys"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "dynamic code"
+      ]
+    },
+    {
+      "id": "official-lib-java-v1-lib-java",
+      "name": "lib_java",
+      "path": "community/official/lib_java/v1/lib_java.py",
+      "package": "official",
+      "kind": "support",
+      "description": "Support module for official: lib java",
+      "license": "MIT",
+      "source": "https://github.com/maxuser0/minescript-scripts/blob/874536fe0a65068721559b56eaab8d652ce449ba/lib_java/v1/lib_java.py",
+      "revision": "874536fe0a65068721559b56eaab8d652ce449ba",
+      "sha256": "eda24fb1315c85770dcf294fbc3739756b9a81465d6e010e49f5f0db4ac62c06",
+      "runtime": "Python",
+      "imports": [
+        "dataclasses",
+        "minescript",
+        "minescript_runtime",
+        "typing"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "official-lib-blockpack-parser-v1-lib-blockpack-parser",
+      "name": "lib_blockpack_parser",
+      "path": "community/official/lib_blockpack_parser/v1/lib_blockpack_parser.py",
+      "package": "official",
+      "kind": "support",
+      "description": "Support module for official: lib blockpack parser",
+      "license": "MIT",
+      "source": "https://github.com/maxuser0/minescript-scripts/blob/874536fe0a65068721559b56eaab8d652ce449ba/lib_blockpack_parser/v1/lib_blockpack_parser.py",
+      "revision": "874536fe0a65068721559b56eaab8d652ce449ba",
+      "sha256": "f7da7a79d660e45569f15900289479816cc317c07bf2a0c009ff6b6bf355bdf5",
+      "runtime": "Python",
+      "imports": [
+        "array",
+        "base64",
+        "dataclasses",
+        "help",
+        "minescript",
+        "struct",
+        "sys",
+        "typing"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "official-interpreter-v1-interpreter",
+      "name": "interpreter",
+      "path": "community/official/interpreter/v1/interpreter.py",
+      "package": "official",
+      "kind": "command",
+      "description": "Interactive Python interpreter in Minecraft chat with Java reflection.",
+      "license": "MIT",
+      "source": "https://github.com/maxuser0/minescript-scripts/blob/874536fe0a65068721559b56eaab8d652ce449ba/interpreter/v1/interpreter.py",
+      "revision": "874536fe0a65068721559b56eaab8d652ce449ba",
+      "sha256": "02a6a0511f7374ae75461f5f9450e872ccc206f9d8eb676fa8983f8f51aa74c8",
+      "runtime": "Python",
+      "imports": [
+        "ast",
+        "builtins",
+        "faulthandler",
+        "lib_java",
+        "minescript",
+        "minescript_runtime",
+        "queue",
+        "re",
+        "signal",
+        "sys",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "dynamic code"
+      ]
+    },
+    {
+      "id": "official-image-to-blocks-v1-image-to-blocks",
+      "name": "image_to_blocks",
+      "path": "community/official/image_to_blocks/v1/image_to_blocks.py",
+      "package": "official",
+      "kind": "command",
+      "description": "Convert a PNG image and optional depth map into Minecraft blocks.",
+      "license": "MIT",
+      "source": "https://github.com/maxuser0/minescript-scripts/blob/874536fe0a65068721559b56eaab8d652ce449ba/image_to_blocks/v1/image_to_blocks.py",
+      "revision": "874536fe0a65068721559b56eaab8d652ce449ba",
+      "sha256": "49f9a83840e98cf5d78a38575b67e65cdb89ffe1c50584214fa00ada97389d64",
+      "runtime": "Python",
+      "imports": [
+        "array",
+        "dataclasses",
+        "json",
+        "minescript",
+        "os",
+        "png",
+        "re",
+        "sys",
+        "typing"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "official-execute-book-v1-execute-book",
+      "name": "execute_book",
+      "path": "community/official/execute_book/v1/execute_book.py",
+      "package": "official",
+      "kind": "command",
+      "description": "Execute a Python program stored in a written Minecraft book.",
+      "license": "MIT",
+      "source": "https://github.com/maxuser0/minescript-scripts/blob/874536fe0a65068721559b56eaab8d652ce449ba/execute_book/v1/execute_book.py",
+      "revision": "874536fe0a65068721559b56eaab8d652ce449ba",
+      "sha256": "6033a8dced40603b2a06b727544fbc631f569c5f8a58bc9cd41749fbbe17bca4",
+      "runtime": "Python",
+      "imports": [
+        "json",
+        "minescript",
+        "re",
+        "shlex",
+        "sys"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "dynamic code"
+      ]
+    },
+    {
+      "id": "official-eval-v1-eval",
+      "name": "eval",
+      "path": "community/official/eval/v1/eval.py",
+      "package": "official",
+      "kind": "command",
+      "description": "Evaluate Python expressions or statements from Minecraft chat.",
+      "license": "MIT",
+      "source": "https://github.com/maxuser0/minescript-scripts/blob/874536fe0a65068721559b56eaab8d652ce449ba/eval/v1/eval.py",
+      "revision": "874536fe0a65068721559b56eaab8d652ce449ba",
+      "sha256": "5959a3012c685819ff8c82fc278d7edd5babcb1b499821c9968e9d1c6d593ed7",
+      "runtime": "Python",
+      "imports": [
+        "builtins",
+        "minescript",
+        "sys",
+        "typing"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "dynamic code"
+      ]
+    },
+    {
+      "id": "official-blocks-to-image-v1-blocks-to-image",
+      "name": "blocks_to_image",
+      "path": "community/official/blocks_to_image/v1/blocks_to_image.py",
+      "package": "official",
+      "kind": "command",
+      "description": "Export a top-down block region as a PNG image and depth map.",
+      "license": "MIT",
+      "source": "https://github.com/maxuser0/minescript-scripts/blob/874536fe0a65068721559b56eaab8d652ce449ba/blocks_to_image/v1/blocks_to_image.py",
+      "revision": "874536fe0a65068721559b56eaab8d652ce449ba",
+      "sha256": "9f53a787a7c0ab488de4432cdae0e925c1ff3cdcbb4731fdc8786e2a4d64dddd",
+      "runtime": "Python",
+      "imports": [
+        "array",
+        "json",
+        "lib_blockpack_parser",
+        "minescript",
+        "os",
+        "png",
+        "random",
+        "re",
+        "sys",
+        "time",
+        "typing"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "file writes",
+        "Documented local repair: Import echo before reporting a missing PNG dependency."
+      ],
+      "upstream_sha256": "7a64954ca2bc647c64263e1d517801d120609bcdff823e191c5c516c6ec6b219",
+      "upstream_snapshot": "upstream/curated/official/blocks_to_image.py.txt",
+      "patches": [
+        "Import echo before reporting a missing PNG dependency."
+      ]
+    },
+    {
+      "id": "official-extras-base-minescript-tools-cylinder",
+      "name": "cylinder",
+      "path": "community/official-extras/base minescript tools/cylinder.py",
+      "package": "official-extras",
+      "kind": "command",
+      "description": "Build the lateral surface of a cylinder using Minecraft commands.",
+      "license": "MIT",
+      "source": "https://github.com/SmartBoty/Minescript/blob/f487903ff47c4070fe1da4317b72af75d1bf7794/base%20minescript%20tools/cylinder.py",
+      "revision": "f487903ff47c4070fe1da4317b72af75d1bf7794",
+      "sha256": "7a4f8b065719721b2cd61ac2792c9873148a9ed8639ec6e2f8fc44ebdcc31869",
+      "runtime": "Python",
+      "imports": [
+        "math",
+        "sys"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "dynamic code"
+      ]
+    },
+    {
+      "id": "official-extras-base-minescript-tools-draw-text",
+      "name": "draw_text",
+      "path": "community/official-extras/base minescript tools/draw_text.py",
+      "package": "official-extras",
+      "kind": "command",
+      "description": "Draw configurable text overlays on the game screen.",
+      "license": "MIT",
+      "source": "https://github.com/SmartBoty/Minescript/blob/f487903ff47c4070fe1da4317b72af75d1bf7794/base%20minescript%20tools/draw_text.py",
+      "revision": "f487903ff47c4070fe1da4317b72af75d1bf7794",
+      "sha256": "c343a99becaf4261ddaffdccf99094e477bac6e372bf316d243230806a0bf5a4",
+      "runtime": "Python",
+      "imports": [
+        "dataclasses",
+        "lib_java",
+        "minescript",
+        "minescript_runtime",
+        "sys",
+        "time",
+        "typing"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "legacy Java mappings"
+      ]
+    },
+    {
+      "id": "razrcraft-discord-webhook",
+      "name": "discord_webhook",
+      "path": "community/razrcraft/discord_webhook.py",
+      "package": "razrcraft",
+      "kind": "support",
+      "description": "Support module for razrcraft: discord webhook",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/discord_webhook.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "b163a4912c94f156e6ce6a6798b3e9be4fca4d97d7b65e6b492a8bd5a6246af6",
+      "runtime": "Python",
+      "imports": [
+        "requests",
+        "sys"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "network"
+      ]
+    },
+    {
+      "id": "razrcraft-example-config-lib",
+      "name": "example_config_lib",
+      "path": "community/razrcraft/example_config_lib.py",
+      "package": "razrcraft",
+      "kind": "example",
+      "description": "Demonstrate JSON-backed per-script settings.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/example_config_lib.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "2dc98c6ee014fd54b5611d5ad01eeea4bee2d76423e768f485ecd8e95668d4ec",
+      "runtime": "Python",
+      "imports": [
+        "config_lib"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "razrcraft-gui",
+      "name": "gui",
+      "path": "community/razrcraft/gui.py",
+      "package": "razrcraft",
+      "kind": "command",
+      "description": "Demonstrate an interactive Minescript GUI.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/gui.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "ed3f8511e261d0f277bf8ec1e9007cfaf6c4b926ad60ab9650e6c1462842399c",
+      "runtime": "Python",
+      "imports": [
+        "lib_screen",
+        "minescript",
+        "minescript_plus"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "razrcraft-ls2",
+      "name": "ls2",
+      "path": "community/razrcraft/ls2.py",
+      "package": "razrcraft",
+      "kind": "command",
+      "description": "Show an enhanced list of available Minescript scripts.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/ls2.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "a3f2520bee6637587825ac8cffa44ab289a5301db8fac15e0c3b39dfd8351ab8",
+      "runtime": "Python",
+      "imports": [
+        "os",
+        "re",
+        "sys"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "razrcraft-scanner",
+      "name": "scanner",
+      "path": "community/razrcraft/scanner.py",
+      "package": "razrcraft",
+      "kind": "command",
+      "description": "Interactively scan blocks and display scan results.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/scanner.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "cf7123599e4cfe9728d74021828f221d3291f71b9640ac5df2dc5434d6ec1075",
+      "runtime": "Python",
+      "imports": [
+        "lib_blockpack_parser",
+        "minescript",
+        "queue",
+        "time",
+        "types"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "razrcraft-test-mouse",
+      "name": "test_mouse",
+      "path": "community/razrcraft/test_mouse.py",
+      "package": "razrcraft",
+      "kind": "example",
+      "description": "Display mouse event information for debugging controls.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/test_mouse.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "1549cf02f2a3b6eb4d0c12995a712ed3eaed2f31a2452786490db3f07f6087f2",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "mouse",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "movement / interaction"
+      ]
+    },
+    {
+      "id": "razrcraft-lib-config-lib",
+      "name": "config_lib",
+      "path": "community/razrcraft/lib/config_lib.py",
+      "package": "razrcraft",
+      "kind": "support",
+      "description": "Support module for razrcraft: config lib",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/lib/config_lib.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "23f6c4d1e7b52d62a4776b06d224a225a49fb7d91c971a787d2821b3f74c6e9f",
+      "runtime": "Python",
+      "imports": [
+        "__future__",
+        "json",
+        "os",
+        "tempfile",
+        "typing"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "file writes"
+      ]
+    },
+    {
+      "id": "razrcraft-lib-glfw-keycodes",
+      "name": "glfw_keycodes",
+      "path": "community/razrcraft/lib/glfw_keycodes.py",
+      "package": "razrcraft",
+      "kind": "support",
+      "description": "Support module for razrcraft: glfw keycodes",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/lib/glfw_keycodes.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "300d0fb757eebb41f875c209db2932c8dff6b18fd7b4c9d4367c48e440b70195",
+      "runtime": "Python",
+      "imports": [
+        "enum"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "razrcraft-lib-lib-screen",
+      "name": "lib_screen",
+      "path": "community/razrcraft/lib/lib_screen.py",
+      "package": "razrcraft",
+      "kind": "support",
+      "description": "Support module for razrcraft: lib screen",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/lib/lib_screen.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "253386e51049a76ca8fb8d6c370c99f53adb1f7129724455662f886443669d7b",
+      "runtime": "Python",
+      "imports": [
+        "tkinter",
+        "typing"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "razrcraft-lib-snbt-parser",
+      "name": "snbt_parser",
+      "path": "community/razrcraft/lib/snbt_parser.py",
+      "package": "razrcraft",
+      "kind": "support",
+      "description": "Support module for razrcraft: snbt parser",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/lib/snbt_parser.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "be87ab598363eef7806ae805042c1a450060a5876179fca63a51b9f2d9b7ba8f",
+      "runtime": "Python",
+      "imports": [
+        "json",
+        "re",
+        "typing"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "razrcraft-lib-snbt-reader",
+      "name": "snbt_reader",
+      "path": "community/razrcraft/lib/snbt_reader.py",
+      "package": "razrcraft",
+      "kind": "support",
+      "description": "Support module for razrcraft: snbt reader",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/lib/snbt_reader.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "da48100ecab195bf96f20dca339d29275b4ba8c767472df9baf1c6e1afe8d824",
+      "runtime": "Python",
+      "imports": [
+        "re",
+        "typing"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "razrcraft-minescript-plus-minescript-plus",
+      "name": "minescript_plus",
+      "path": "community/razrcraft/Minescript-Plus/minescript_plus.py",
+      "package": "razrcraft",
+      "kind": "support",
+      "description": "Support module for razrcraft: minescript plus",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/Minescript-Plus/minescript_plus.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "d0486b32b3cd961927ee66fce83cc9ce4e837ce040b1653dadd905838cd324e0",
+      "runtime": "Python",
+      "imports": [
+        "asyncio",
+        "base64",
+        "dataclasses",
+        "java",
+        "json",
+        "lib_nbt",
+        "math",
+        "minescript",
+        "os",
+        "sys",
+        "threading",
+        "time",
+        "typing"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "dynamic code",
+        "movement / interaction",
+        "legacy Java mappings"
+      ]
+    },
+    {
+      "id": "razrcraft-svc-key-svc",
+      "name": "key_svc",
+      "path": "community/razrcraft/svc/key_svc.py",
+      "package": "razrcraft",
+      "kind": "command",
+      "description": "Run a keyboard event service for script key bindings.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/svc/key_svc.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "0de5ae59fe68567fae20907f88ecd5f557f9b8cb5dbea0d1a86745dc63343ba2",
+      "runtime": "Python",
+      "imports": [
+        "glfw_keycodes",
+        "minescript"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "razrcraft-svc-ms-key-command",
+      "name": "ms_key_command",
+      "path": "community/razrcraft/svc/ms_key_command.py",
+      "package": "razrcraft",
+      "kind": "command",
+      "description": "Bind Minescript commands to keyboard shortcuts.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/svc/ms_key_command.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "e1bff0e95add304aeabd3144d44389844cf6ce00a65dd9771c9aff33957aeafb",
+      "runtime": "Python",
+      "imports": [
+        "minescript"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "razrcraft-tools-mappings-downloader",
+      "name": "mappings_downloader",
+      "path": "community/razrcraft/tools/mappings_downloader.py",
+      "package": "razrcraft",
+      "kind": "command",
+      "description": "Download Java mappings needed by older Minecraft versions.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/tools/mappings_downloader.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "d261a5291abf5b3fca8697f32962af9633111b82d82f88963635356afbfa2752",
+      "runtime": "Python",
+      "imports": [
+        "json",
+        "minescript",
+        "os",
+        "pathlib",
+        "sys",
+        "urllib"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "network"
+      ]
+    },
+    {
+      "id": "razrcraft-tools-wider-chat",
+      "name": "wider_chat",
+      "path": "community/razrcraft/tools/wider_chat.pyj",
+      "package": "razrcraft",
+      "kind": "command",
+      "description": "Adjust Minecraft chat width through Java reflection; uses old field mappings.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/tools/wider_chat.pyj",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "bb0eec3923ed65507771879ab5873139cee901d3e0eaf94af1f1d8fb15f1b511",
+      "runtime": "Pyjinn",
+      "imports": [
+        "system"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "legacy Java mappings"
+      ]
+    },
+    {
+      "id": "razrcraft-worldrender-worldrender",
+      "name": "worldrender",
+      "path": "community/razrcraft/WorldRender/worldrender.py",
+      "package": "razrcraft",
+      "kind": "support",
+      "description": "Support module for razrcraft: worldrender",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/WorldRender/worldrender.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "89bfddeab2b637229918a8f0c20e722d91357fe8e7a837475b09cc0c7319765d",
+      "runtime": "Python",
+      "imports": [
+        "java",
+        "minescript",
+        "typing"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "dynamic code"
+      ]
+    },
+    {
+      "id": "razrcraft-worldrender-worldrender-test1",
+      "name": "worldrender_test1",
+      "path": "community/razrcraft/WorldRender/worldrender_test1.py",
+      "package": "razrcraft",
+      "kind": "example",
+      "description": "Demonstrate rendering world-space geometry.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/WorldRender/worldrender_test1.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "88dc9e5ffb16fa8408affd3f10cbe3e034fff4df8064c0482b2274f90d706afb",
+      "runtime": "Python",
+      "imports": [
+        "time",
+        "worldrender"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "razrcraft-worldrender-worldrender-test2",
+      "name": "worldrender_test2",
+      "path": "community/razrcraft/WorldRender/worldrender_test2.py",
+      "package": "razrcraft",
+      "kind": "example",
+      "description": "Demonstrate a second world-space overlay scene.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/WorldRender/worldrender_test2.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "1e69d976ace8be2ed786e7b31cc98dbcc67b055345d2bef788e827f76a0fa784",
+      "runtime": "Python",
+      "imports": [
+        "time",
+        "worldrender"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "razrcraft-minescript-plus-examples-actionbar-event",
+      "name": "actionbar_event",
+      "path": "community/razrcraft/Minescript-Plus/examples/actionbar_event.py",
+      "package": "razrcraft",
+      "kind": "example",
+      "description": "Read actionbar events from the game.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/Minescript-Plus/examples/actionbar_event.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "eff007330269a6f760d378667d5a29ac57987ecf3a71325499d6fee74ef4baf5",
+      "runtime": "Python",
+      "imports": [
+        "asyncio",
+        "minescript",
+        "minescript_plus"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "razrcraft-minescript-plus-examples-actionbar-event2",
+      "name": "actionbar_event2",
+      "path": "community/razrcraft/Minescript-Plus/examples/actionbar_event2.py",
+      "package": "razrcraft",
+      "kind": "example",
+      "description": "Alternative actionbar event listener example.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/Minescript-Plus/examples/actionbar_event2.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "bb12c2d5ff826efc990c64f92215bf08f3b7a6cfb272b574f5cb080713a1dbf7",
+      "runtime": "Python",
+      "imports": [
+        "asyncio",
+        "minescript",
+        "minescript_plus"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "razrcraft-minescript-plus-examples-press-key",
+      "name": "press_key",
+      "path": "community/razrcraft/Minescript-Plus/examples/press_key.py",
+      "package": "razrcraft",
+      "kind": "example",
+      "description": "Demonstrate triggering a Minecraft key binding.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/Minescript-Plus/examples/press_key.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "7f044dd1f481ee964c374f5d0e2d65c8f5a19eef4d1454b35ff6a4d29e721e9a",
+      "runtime": "Python",
+      "imports": [
+        "minescript_plus",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "razrcraft-minescript-plus-examples-swap",
+      "name": "swap",
+      "path": "community/razrcraft/Minescript-Plus/examples/swap.py",
+      "package": "razrcraft",
+      "kind": "example",
+      "description": "Demonstrate swapping an inventory slot with a hotbar slot.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/Minescript-Plus/examples/swap.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "5d2e0c41cefc5e9ed31488f9ae9d2b943d4752deb8bd8bd653cd358be968869a",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "minescript_plus",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "movement / interaction"
+      ]
+    },
+    {
+      "id": "razrcraft-minescript-plus-examples-title-actionbar",
+      "name": "title-actionbar",
+      "path": "community/razrcraft/Minescript-Plus/examples/title-actionbar.py",
+      "package": "razrcraft",
+      "kind": "example",
+      "description": "Display title, subtitle, and actionbar messages.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/Minescript-Plus/examples/title-actionbar.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "203cc0d72232995ba7d0c760918ef95643e807eca4b082f2533f113d05af3037",
+      "runtime": "Python",
+      "imports": [
+        "minescript_plus",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "razrcraft-minescript-plus-examples-trading",
+      "name": "trading",
+      "path": "community/razrcraft/Minescript-Plus/examples/trading.py",
+      "package": "razrcraft",
+      "kind": "example",
+      "description": "Demonstrate a single selected villager trade.",
+      "license": "MIT",
+      "source": "https://github.com/R4z0rX/minescript-scripts/blob/7f74c3861cbf53c36c8acb12c9f3bad7e90dec75/Minescript-Plus/examples/trading.py",
+      "revision": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "sha256": "5ced46f54f094d4e50c44b1b6d9964b8bf9fae1542e23dab16fb8b4545b6e198",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "minescript_plus",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "movement / interaction"
+      ]
+    },
+    {
+      "id": "julian-libs-lib-astar",
+      "name": "lib_astar",
+      "path": "community/julian/libs/lib_astar.py",
+      "package": "julian",
+      "kind": "support",
+      "description": "Support module for julian: lib astar",
+      "license": "MIT",
+      "source": "https://github.com/JulianIsLost/minescript-scripts/blob/384f065a5a3c4c8bfb9dd6494520c2b85eb81625/libs/lib_astar.py",
+      "revision": "384f065a5a3c4c8bfb9dd6494520c2b85eb81625",
+      "sha256": "ac40a30e99975f383cbff87c0044d8a75055119cdff22a1c26c11719136e8158",
+      "runtime": "Python",
+      "imports": [
+        "java",
+        "minescript"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "dynamic code"
+      ]
+    },
+    {
+      "id": "julian-lib-inv-lib-inv",
+      "name": "lib_inv",
+      "path": "community/julian/lib_inv/lib_inv.py",
+      "package": "julian",
+      "kind": "support",
+      "description": "Support module for julian: lib inv",
+      "license": "MIT",
+      "source": "https://github.com/JulianIsLost/minescript-scripts/blob/384f065a5a3c4c8bfb9dd6494520c2b85eb81625/lib_inv/lib_inv.py",
+      "revision": "384f065a5a3c4c8bfb9dd6494520c2b85eb81625",
+      "sha256": "1ca0c3727eeb5f65035eb4b4d8dd8b86586926c064a88d04709a0fdad9f38c02",
+      "runtime": "Python",
+      "imports": [
+        "collections",
+        "java",
+        "minescript",
+        "threading",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "dynamic code",
+        "legacy Java mappings"
+      ]
+    },
+    {
+      "id": "julian-lib-ren-lib-ren",
+      "name": "lib_ren",
+      "path": "community/julian/lib_ren/lib_ren.py",
+      "package": "julian",
+      "kind": "support",
+      "description": "Support module for julian: lib ren",
+      "license": "MIT",
+      "source": "https://github.com/JulianIsLost/minescript-scripts/blob/384f065a5a3c4c8bfb9dd6494520c2b85eb81625/lib_ren/lib_ren.py",
+      "revision": "384f065a5a3c4c8bfb9dd6494520c2b85eb81625",
+      "sha256": "a8e65e8de09712aea32ec46aeb4fd833cbd617aab04c8be66dbb1e13dec1ec83",
+      "runtime": "Python",
+      "imports": [
+        "system"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "legacy Java mappings"
+      ]
+    },
+    {
+      "id": "julian-scripts-astar",
+      "name": "astar",
+      "path": "community/julian/scripts/astar.pyj",
+      "package": "julian",
+      "kind": "command",
+      "description": "Calculate and visualize an A-star walking route.",
+      "license": "MIT",
+      "source": "https://github.com/JulianIsLost/minescript-scripts/blob/384f065a5a3c4c8bfb9dd6494520c2b85eb81625/scripts/astar.pyj",
+      "revision": "384f065a5a3c4c8bfb9dd6494520c2b85eb81625",
+      "sha256": "98b4a4ae50c4eee4cf4d17456f9d4de3a03a4bcb9dfc77229fd0e3fffb61ece5",
+      "runtime": "Pyjinn",
+      "imports": [
+        "lib_ren"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed",
+        "Local repair: removed hardcoded termination of another job ID."
+      ],
+      "upstream_sha256": "06e8487f4202cc2ed463a03d7695ef7dbab2ac5ee6c6db50e159a913a2bcfba9",
+      "upstream_snapshot": "upstream/curated/julian/astar.pyj.txt",
+      "patches": [
+        "Stop the current script with sys.exit instead of killing hardcoded job 1."
+      ]
+    },
+    {
+      "id": "julian-scripts-astar-walk",
+      "name": "astar_walk",
+      "path": "community/julian/scripts/astar_walk.pyj",
+      "package": "julian",
+      "kind": "command",
+      "description": "Walk a route generated by the A-star example.",
+      "license": "MIT",
+      "source": "https://github.com/JulianIsLost/minescript-scripts/blob/384f065a5a3c4c8bfb9dd6494520c2b85eb81625/scripts/astar_walk.pyj",
+      "revision": "384f065a5a3c4c8bfb9dd6494520c2b85eb81625",
+      "sha256": "1fbc761f648f4fb28bf39113e7759f872a6bd94d09eedf27e1835134de0b871f",
+      "runtime": "Pyjinn",
+      "imports": [
+        "astar"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed",
+        "Local repair: removed hardcoded termination of another job ID."
+      ],
+      "upstream_sha256": "b41f7595efef8da4583af778e9f4119f04cf187bef8760d38826fbe16ca89778",
+      "upstream_snapshot": "upstream/curated/julian/astar_walk.pyj.txt",
+      "patches": [
+        "Stop the current script with sys.exit instead of killing hardcoded job 1."
+      ]
+    },
+    {
+      "id": "julian-scripts-blocktp",
+      "name": "blocktp",
+      "path": "community/julian/scripts/blocktp.pyj",
+      "package": "julian",
+      "kind": "command",
+      "description": "Move to a selected block using the source block-teleport interaction.",
+      "license": "MIT",
+      "source": "https://github.com/JulianIsLost/minescript-scripts/blob/384f065a5a3c4c8bfb9dd6494520c2b85eb81625/scripts/blocktp.pyj",
+      "revision": "384f065a5a3c4c8bfb9dd6494520c2b85eb81625",
+      "sha256": "36d4165f458693ae305d47181f739d17ed229a65114f1f52f4e837787879fc2b",
+      "runtime": "Pyjinn",
+      "imports": [],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "julian-tools-itemhelper",
+      "name": "itemhelper",
+      "path": "community/julian/tools/itemhelper.py",
+      "package": "julian",
+      "kind": "support",
+      "description": "Support module for julian: itemhelper",
+      "license": "MIT",
+      "source": "https://github.com/JulianIsLost/minescript-scripts/blob/384f065a5a3c4c8bfb9dd6494520c2b85eb81625/tools/itemhelper.py",
+      "revision": "384f065a5a3c4c8bfb9dd6494520c2b85eb81625",
+      "sha256": "80a616fe4237d4bce4f2c5a39e46d708714bb5c79683ca6a864148cecd4ea2f9",
+      "runtime": "Python",
+      "imports": [],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "legacy Java mappings"
+      ]
+    },
+    {
+      "id": "smooth-mining-advanced-autofarmer-hype",
+      "name": "Advanced Autofarmer (HYPE)",
+      "path": "community/smooth-mining/Advanced Autofarmer (HYPE).py",
+      "package": "smooth-mining",
+      "kind": "command",
+      "description": "Run a configurable crop-farming macro with its source hotbar setup.",
+      "license": "MIT",
+      "source": "https://github.com/Minescript-Snippets/Macroes/blob/cba6e2722b64b37654f30529c96b1396a58779fe/Advanced%20Autofarmer%20(HYPE).py",
+      "revision": "cba6e2722b64b37654f30529c96b1396a58779fe",
+      "sha256": "2d88dfb5846cd066c97a23898dc80abb0f1e89fe42ac45632d6b3704c3884644",
+      "runtime": "Python",
+      "imports": [
+        "math",
+        "minescript",
+        "random",
+        "sys",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "movement / interaction",
+        "Minecraft commands / OP may be needed",
+        "Documented local repair: Define the missing help function so --help does not crash."
+      ],
+      "upstream_sha256": "602cdbf539f48338cb126ede6289724d44cae2e2cc5318b0a2630db8281762fd",
+      "upstream_snapshot": "upstream/curated/smooth-mining/Advanced Autofarmer (HYPE).py.txt",
+      "patches": [
+        "Define the missing help function so --help does not crash."
+      ]
+    },
+    {
+      "id": "smooth-mining-smoothlookautomining",
+      "name": "SmoothLookAutoMining",
+      "path": "community/smooth-mining/SmoothLookAutoMining.py",
+      "package": "smooth-mining",
+      "kind": "command",
+      "description": "Find configured nearby blocks, rotate smoothly to them, and mine them.",
+      "license": "MIT",
+      "source": "https://github.com/Minescript-Snippets/Macroes/blob/cba6e2722b64b37654f30529c96b1396a58779fe/SmoothLookAutoMining.py",
+      "revision": "cba6e2722b64b37654f30529c96b1396a58779fe",
+      "sha256": "6f24f8d7f861283c773e3fd611dca09218d7b8907a48c30029ba167f6334ef00",
+      "runtime": "Python",
+      "imports": [
+        "math",
+        "minescript",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "movement / interaction"
+      ]
+    },
+    {
+      "id": "pattern-farming-patternfarmautomation",
+      "name": "PatternFarmAutomation",
+      "path": "community/pattern-farming/PatternFarmAutomation.py",
+      "package": "pattern-farming",
+      "kind": "command",
+      "description": "Automate a configurable sequence of movements across patterned farm rows.",
+      "license": "MIT",
+      "source": "https://github.com/Twilight-Lab/Minescript-Macroes/blob/0c01b299d09e2b82522c437fde232348bc4a7bb2/PatternFarmAutomation.py",
+      "revision": "0c01b299d09e2b82522c437fde232348bc4a7bb2",
+      "sha256": "1be54e79e4a5149bc940820c1e21ecaaf3e5c4e15ab51d3cf67610af4ca51f39",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "random",
+        "sys",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "movement / interaction"
+      ]
+    },
+    {
+      "id": "skyblock-pyjinn-beehive",
+      "name": "beehive",
+      "path": "community/skyblock/Pyjinn/beehive.pyj",
+      "package": "skyblock",
+      "kind": "command",
+      "description": "Follow SkyBlock beehive waypoints and interact with hives.",
+      "license": "MIT",
+      "source": "https://github.com/cantaloupasta/Minescript/blob/a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf/Pyjinn/beehive.pyj",
+      "revision": "a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf",
+      "sha256": "c09285ab2caf2ecd8f5de87d3bb99375c9f7b25eddc33f665a7687b6f3a270be",
+      "runtime": "Pyjinn",
+      "imports": [
+        "minescript",
+        "system"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "skyblock-pyjinn-corleone",
+      "name": "corleone",
+      "path": "community/skyblock/Pyjinn/corleone.pyj",
+      "package": "skyblock",
+      "kind": "command",
+      "description": "Automate the source SkyBlock Corleone encounter routine.",
+      "license": "MIT",
+      "source": "https://github.com/cantaloupasta/Minescript/blob/a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf/Pyjinn/corleone.pyj",
+      "revision": "a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf",
+      "sha256": "21a08101ec4a91228a3fd3346d92b6118ef517bfc83ce97cf486aa73017bc07f",
+      "runtime": "Pyjinn",
+      "imports": [
+        "minescript",
+        "system"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "skyblock-pyjinn-dragon",
+      "name": "dragon",
+      "path": "community/skyblock/Pyjinn/dragon.pyj",
+      "package": "skyblock",
+      "kind": "command",
+      "description": "Track and interact with SkyBlock dragon encounters.",
+      "license": "MIT",
+      "source": "https://github.com/cantaloupasta/Minescript/blob/a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf/Pyjinn/dragon.pyj",
+      "revision": "a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf",
+      "sha256": "d6f1a31f53962abcdcbb6e065ce24a9112eb4692c57010c3c65e50b992933d81",
+      "runtime": "Pyjinn",
+      "imports": [
+        "minescript",
+        "system"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "skyblock-pyjinn-esp",
+      "name": "esp",
+      "path": "community/skyblock/Pyjinn/esp.pyj",
+      "package": "skyblock",
+      "kind": "command",
+      "description": "Display nearby entity overlays with the Pyjinn runtime.",
+      "license": "MIT",
+      "source": "https://github.com/cantaloupasta/Minescript/blob/a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf/Pyjinn/esp.pyj",
+      "revision": "a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf",
+      "sha256": "b0a63349b34194b18895953db0d5998a9b2d1ae2484e93449ef52efe62915d83",
+      "runtime": "Pyjinn",
+      "imports": [
+        "minescript"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "skyblock-pyjinn-lava",
+      "name": "lava",
+      "path": "community/skyblock/Pyjinn/lava.pyj",
+      "package": "skyblock",
+      "kind": "command",
+      "description": "Run the source SkyBlock lava-fishing interaction routine.",
+      "license": "MIT",
+      "source": "https://github.com/cantaloupasta/Minescript/blob/a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf/Pyjinn/lava.pyj",
+      "revision": "a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf",
+      "sha256": "014a0d2efb5377e6716a444ae56b550e2683a95666ce4461a08e1092a5db81a5",
+      "runtime": "Pyjinn",
+      "imports": [
+        "minescript",
+        "system"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "skyblock-python-esp-radar",
+      "name": "radar",
+      "path": "community/skyblock/Python/esp/radar.py",
+      "package": "skyblock",
+      "kind": "command",
+      "description": "Display configurable entity radar using a Tkinter control panel.",
+      "license": "MIT",
+      "source": "https://github.com/cantaloupasta/Minescript/blob/a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf/Python/esp/radar.py",
+      "revision": "a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf",
+      "sha256": "a828ee537fbd149dab67912f46f59184ec9d1edf969756456db93a4145c9d10e",
+      "runtime": "Python",
+      "imports": [
+        "json",
+        "os",
+        "system",
+        "tkinter"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "file writes"
+      ]
+    },
+    {
+      "id": "skyblock-python-exp-exp",
+      "name": "exp",
+      "path": "community/skyblock/Python/exp/exp.py",
+      "package": "skyblock",
+      "kind": "command",
+      "description": "Automate the source SkyBlock experimentation-table minigames.",
+      "license": "MIT",
+      "source": "https://github.com/cantaloupasta/Minescript/blob/a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf/Python/exp/exp.py",
+      "revision": "a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf",
+      "sha256": "29acd01d11680dc97574d63535c0ddcedc6ac2aa88a6b57731702f04f6d4f8be",
+      "runtime": "Python",
+      "imports": [
+        "base64",
+        "functools",
+        "json",
+        "lib_inv",
+        "minescript",
+        "re",
+        "sys",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "movement / interaction"
+      ]
+    },
+    {
+      "id": "skyblock-python-fish-fish",
+      "name": "fish",
+      "path": "community/skyblock/Python/fish/fish.py",
+      "package": "skyblock",
+      "kind": "command",
+      "description": "Configurable SkyBlock fishing, including trophy and magma modes.",
+      "license": "MIT",
+      "source": "https://github.com/cantaloupasta/Minescript/blob/a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf/Python/fish/fish.py",
+      "revision": "a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf",
+      "sha256": "f677e3769607257672d57c0e9a6c8208d6c54de578d06e858087be08f247867a",
+      "runtime": "Python",
+      "imports": [
+        "base64",
+        "eventlib",
+        "json",
+        "lib_inv",
+        "math",
+        "minescript",
+        "random",
+        "re",
+        "system",
+        "threading",
+        "time",
+        "tkinter"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "movement / interaction",
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "camera-camera",
+      "name": "camera",
+      "path": "community/camera/camera.pyj",
+      "package": "camera",
+      "kind": "command",
+      "description": "Record and play back a Minecraft camera movement sequence.",
+      "license": "MIT",
+      "source": "https://github.com/joelkoen/minescript-camera/blob/5373853ef51cfedc7b72a68cafb58aa71005bf17/camera.pyj",
+      "revision": "5373853ef51cfedc7b72a68cafb58aa71005bf17",
+      "sha256": "d470780463ab1bd0d44c4170bcf4c0d95dd4fe2ffe11430fd193b62e19c2f702",
+      "runtime": "Pyjinn",
+      "imports": [
+        "minescript"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "movement / interaction"
+      ]
+    },
+    {
+      "id": "minekit-const",
+      "name": "const",
+      "path": "community/minekit/const.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: const",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/const.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "ec85dcd03b0ebea2b83b3b8f475570a0300e4a098af7631a9d6d6c8959558686",
+      "runtime": "Python",
+      "imports": [
+        "generated",
+        "internal"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-init",
+      "name": "__init__",
+      "path": "community/minekit/__init__.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit:   init  ",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/__init__.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "1855eb00d1377b871e787faafd3ed435260b3d9b883fe4e605255747fb877902",
+      "runtime": "Python",
+      "imports": [
+        "importlib"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-control-hotkeys",
+      "name": "hotkeys",
+      "path": "community/minekit/control/hotkeys.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: hotkeys",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/control/hotkeys.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "7a4f182d4713776a3083467ced2ca042adfb72a28303b34f3e0ae1ab0ee964fa",
+      "runtime": "Python",
+      "imports": [
+        "__future__",
+        "internal",
+        "minescript",
+        "queue"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-control-inventory",
+      "name": "inventory",
+      "path": "community/minekit/control/inventory.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: inventory",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/control/inventory.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "f97d2227f3a91f1379cd1f477abf0b2d8306e40a0081c72810d4ce2377949949",
+      "runtime": "Python",
+      "imports": [
+        "__future__",
+        "collections",
+        "internal",
+        "minescript",
+        "re"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-control-keyboard",
+      "name": "keyboard",
+      "path": "community/minekit/control/keyboard.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: keyboard",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/control/keyboard.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "ad53050c0ad761e533cf62786334ec67b57ff82832c790fb3be589385d7dbc70",
+      "runtime": "Python",
+      "imports": [
+        "__future__",
+        "internal",
+        "minescript",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "movement / interaction"
+      ]
+    },
+    {
+      "id": "minekit-control-logs",
+      "name": "logs",
+      "path": "community/minekit/control/logs.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: logs",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/control/logs.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "a9fe5daa87c316b3893b45bae71253c0e3b707ce43505a041344e2030b32a2b7",
+      "runtime": "Python",
+      "imports": [
+        "__future__",
+        "minescript",
+        "traceback"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-control-mouse",
+      "name": "mouse",
+      "path": "community/minekit/control/mouse.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: mouse",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/control/mouse.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "4e051ef0b5da0cc35b0d106d62dcacb1355949efc849a8b19ed7680cb7648ae7",
+      "runtime": "Python",
+      "imports": [
+        "__future__",
+        "game",
+        "internal",
+        "minescript",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "movement / interaction"
+      ]
+    },
+    {
+      "id": "minekit-control-player",
+      "name": "player",
+      "path": "community/minekit/control/player.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: player",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/control/player.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "ca0c1107fe61a680a79099172ebdfbe78745f6b07b48361367cf7086ab5c2a8d",
+      "runtime": "Python",
+      "imports": [
+        "__future__",
+        "game",
+        "internal",
+        "inventory",
+        "math",
+        "minescript",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "movement / interaction"
+      ]
+    },
+    {
+      "id": "minekit-control-timing",
+      "name": "timing",
+      "path": "community/minekit/control/timing.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: timing",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/control/timing.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "0a5f85ff2eedfeb1ff8b4bd6f70aeb9ef2d345695f26e3368bfd17e9e53b6832",
+      "runtime": "Python",
+      "imports": [
+        "__future__",
+        "game"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-control-init",
+      "name": "__init__",
+      "path": "community/minekit/control/__init__.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit:   init  ",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/control/__init__.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "2b4aae27d99eb43c5e90d2ae627c13da2976be9eef6e74f6c755c3a0f6c66a45",
+      "runtime": "Python",
+      "imports": [
+        "hotkeys",
+        "inventory",
+        "keyboard",
+        "logs",
+        "mouse",
+        "player",
+        "timing"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-game-angles",
+      "name": "angles",
+      "path": "community/minekit/game/angles.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: angles",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/game/angles.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "88bf1fcb680c0245797e53527be8a09e695e935ace516dd30e58991eacadcf5b",
+      "runtime": "Python",
+      "imports": [
+        "__future__",
+        "internal",
+        "math"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-game-blocks",
+      "name": "blocks",
+      "path": "community/minekit/game/blocks.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: blocks",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/game/blocks.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "0458acdbc98aa879e232c7ad7d82548b20a931a580c0e29fdec6a764b2ea8a64",
+      "runtime": "Python",
+      "imports": [
+        "__future__",
+        "generated"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-game-commands",
+      "name": "commands",
+      "path": "community/minekit/game/commands.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: commands",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/game/commands.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "628c4260d81af3c5ac7a640041a47e3cb7299c4178fc118643aa30be15c6353b",
+      "runtime": "Python",
+      "imports": [
+        "__future__",
+        "blocks",
+        "internal",
+        "json",
+        "minescript"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "minekit-game-timing",
+      "name": "timing",
+      "path": "community/minekit/game/timing.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: timing",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/game/timing.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "5cb676834b7dd909d62f6c7d37e0dac218f59236a13484af4634c05936ba6da9",
+      "runtime": "Python",
+      "imports": [
+        "__future__",
+        "minescript",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-game-init",
+      "name": "__init__",
+      "path": "community/minekit/game/__init__.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit:   init  ",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/game/__init__.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "8f794364a115c198627da92a5eb99cd627fe94c780f46012987ecb746e371683",
+      "runtime": "Python",
+      "imports": [
+        "angles",
+        "blocks",
+        "commands",
+        "timing"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-generated-block-catalog",
+      "name": "block_catalog",
+      "path": "community/minekit/generated/block_catalog.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: block catalog",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/generated/block_catalog.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "57879b270640d1df513539c8855d69c6db6314c7ffb5f6c6a04f9f897c5dfa70",
+      "runtime": "Python",
+      "imports": [],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-generated-entity-catalog",
+      "name": "entity_catalog",
+      "path": "community/minekit/generated/entity_catalog.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: entity catalog",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/generated/entity_catalog.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "c19ae1b3e9d56061380f3464b4ee0a4e7b5cd89879f65062687b58ed6de75dd0",
+      "runtime": "Python",
+      "imports": [],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-generated-item-catalog",
+      "name": "item_catalog",
+      "path": "community/minekit/generated/item_catalog.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: item catalog",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/generated/item_catalog.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "d8e0f86ce89356295dcfad0ad756eb8b512f27faa2032fa0f08987abbf4cb6bd",
+      "runtime": "Python",
+      "imports": [],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-generated-init",
+      "name": "__init__",
+      "path": "community/minekit/generated/__init__.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit:   init  ",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/generated/__init__.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "6c604696724a27e81e73cc7ecc4239f59372feaed340bd57ba3913f2d46dced0",
+      "runtime": "Python",
+      "imports": [],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-internal-catalog",
+      "name": "catalog",
+      "path": "community/minekit/internal/catalog.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: catalog",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/internal/catalog.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "5f196989ae003a86e4dca6bcc94973fbaff338f632c4953a0042ac38b4c0e5ca",
+      "runtime": "Python",
+      "imports": [
+        "__future__",
+        "functools",
+        "generated",
+        "json",
+        "pathlib",
+        "zipfile"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-internal-enums",
+      "name": "enums",
+      "path": "community/minekit/internal/enums.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: enums",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/internal/enums.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "a57070a8c641469bc1ae2ae9f2cc078adb2a76d37ab32b9193b3b79e50836593",
+      "runtime": "Python",
+      "imports": [
+        "enum"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-internal-types",
+      "name": "types",
+      "path": "community/minekit/internal/types.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit: types",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/internal/types.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "494834f192901edee9d3fd491e630054c0627f1f4c2af1f68026aaa5b4ed9954",
+      "runtime": "Python",
+      "imports": [
+        "dataclasses",
+        "typing"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "minekit-internal-init",
+      "name": "__init__",
+      "path": "community/minekit/internal/__init__.py",
+      "package": "minekit",
+      "kind": "support",
+      "description": "Support module for minekit:   init  ",
+      "license": "MIT",
+      "source": "https://github.com/hakenshi/minekit/blob/dbf9fd11ccb542f82afefee98e411f03e74c4f2a/internal/__init__.py",
+      "revision": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "sha256": "86798401cf538ea1cf701420b0dccda2cc9b1eb9747eefb1171d1de4b7efde19",
+      "runtime": "Python",
+      "imports": [],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "pathfinding-pathfinder",
+      "name": "pathfinder",
+      "path": "community/pathfinding/pathfinder.pyj",
+      "package": "pathfinding",
+      "kind": "support",
+      "description": "Support module for pathfinding: pathfinder",
+      "license": "MIT",
+      "source": "https://github.com/n-aoH/Minescript-Pathfinder/blob/9ab9b73b5e744a00fd41cab10e2efdd59af4900f/pathfinder.pyj",
+      "revision": "9ab9b73b5e744a00fd41cab10e2efdd59af4900f",
+      "sha256": "b0d7e0a0ae367d9b0f894bcbd944491846fafe1d548a47d9c3f3af68693a7b1e",
+      "runtime": "Pyjinn",
+      "imports": [
+        "minescript"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": []
+    },
+    {
+      "id": "theta-star-thetastar",
+      "name": "ThetaStar",
+      "path": "community/theta-star/ThetaStar.py",
+      "package": "theta-star",
+      "kind": "support",
+      "description": "Support module for theta-star: ThetaStar",
+      "license": "MIT",
+      "source": "https://github.com/hyshenn/thetaSTAR/blob/05f8b8446d8f1181c08518c5813117e0035f7c7e/ThetaStar.py",
+      "revision": "05f8b8446d8f1181c08518c5813117e0035f7c7e",
+      "sha256": "8157031f1909bc41315552cddb199a013e63f61ad378b94040abe94b56a04589",
+      "runtime": "Python",
+      "imports": [
+        "concurrent",
+        "heapq",
+        "math",
+        "rotation",
+        "system",
+        "threading",
+        "time"
+      ],
+      "status": "manual setup / live test pending",
+      "notes": [
+        "movement / interaction"
+      ]
+    },
+    {
+      "id": "tutorials-guide02-01-detect-held-items-main-off-hand",
+      "name": "guide02-01-detect-held-items-main-off-hand",
+      "path": "examples/tutorials/guide02-01-detect-held-items-main-off-hand.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 02: \u2777 Detect Held Items (Main/Off Hand)",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide02.md#L40",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "788ec25cfec8c4607aa855d7997ad4c58ce2fe72698cc4ec98978616f978c3db",
+      "runtime": "Python",
+      "imports": [
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-guide02-02-off-hand",
+      "name": "guide02-02-off-hand",
+      "path": "examples/tutorials/guide02-02-off-hand.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 02: Off hand",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide02.md#L67",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "7631b35c0553819c38027e63b08b1bdfba7914d8e44343d66bf7d1573112af1a",
+      "runtime": "Python",
+      "imports": [
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-guide02-03-detect-left-right-clicks",
+      "name": "guide02-03-detect-left-right-clicks",
+      "path": "examples/tutorials/guide02-03-detect-left-right-clicks.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 02: \u2778 Detect Left & Right Clicks",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide02.md#L105",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "293fe649c12abd12d5ef2dbc9ddf120e074d353d323bcc809dacdac9f500da55",
+      "runtime": "Python",
+      "imports": [
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-guide02-04-detect-key",
+      "name": "guide02-04-detect-key",
+      "path": "examples/tutorials/guide02-04-detect-key.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 02: \u2779 Detect Key",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide02.md#L140",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "bfb73194a0dd1d7be453bc557a5635f59677a5af3d4e5267efdbc3a0927214c3",
+      "runtime": "Python",
+      "imports": [
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-guide02-06-backhome-script-example",
+      "name": "guide02-06-backhome-script-example",
+      "path": "examples/tutorials/guide02-06-backhome-script-example.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 02: \u277b Backhome Script Example",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide02.md#L201",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "cd54ab7ac611ab31388a3b6c23b8a4c25c9475df5e57056a84ac9d853f057e5d",
+      "runtime": "Python",
+      "imports": [
+        "math",
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-guide02-07-record-current-player-position-block-coordinates",
+      "name": "guide02-07-record-current-player-position-block-coordinates",
+      "path": "examples/tutorials/guide02-07-record-current-player-position-block-coordinates.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 02: Record current player position (block coordinates)",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide02.md#L244",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "a4c19a40f6f1faee40bf542b9a73d4ed73e305aeca7f84a2dffa57099912feee",
+      "runtime": "Python",
+      "imports": [
+        "math",
+        "minescript",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-guide03-01-actionbar-countdown",
+      "name": "guide03-01-actionbar-countdown",
+      "path": "examples/tutorials/guide03-01-actionbar-countdown.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 03: \u2776 Actionbar Countdown",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide03.md#L37",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "a420b85b9413693293de1f7b1852acbeed675c75b649ade62082e3f85706c42b",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-guide03-03-scoreboard-countdown",
+      "name": "guide03-03-scoreboard-countdown",
+      "path": "examples/tutorials/guide03-03-scoreboard-countdown.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 03: \u2777 Scoreboard Countdown",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide03.md#L87",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "7ecc8ef34f94c45dd225758b163a3482ee6c429ad5bc28abdcf5ad7552b915b4",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-guide03-04-mm-ss-format-example",
+      "name": "guide03-04-mm-ss-format-example",
+      "path": "examples/tutorials/guide03-04-mm-ss-format-example.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 03: MM:SS Format Example",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide03.md#L118",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "afa26416e6b338f5ee09364ff9951872ed7ab6f85be80890d06c97ff4cd8c461",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-guide03-05-bossbar-countdown",
+      "name": "guide03-05-bossbar-countdown",
+      "path": "examples/tutorials/guide03-05-bossbar-countdown.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 03: \u2778 Bossbar Countdown",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide03.md#L177",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "1fa2f02d8c09691e580218eeade98b7dfa660fb9e0b15ed1a2454934077ca710",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-guide05-01-example-listen-to-chat",
+      "name": "guide05-01-example-listen-to-chat",
+      "path": "examples/tutorials/guide05-01-example-listen-to-chat.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 05: \u2777 Example: Listen to Chat",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide05.md#L34",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "b727c0416a612517860cb61a3e648756282b7400ca9f020d85aa12a594b0275c",
+      "runtime": "Python",
+      "imports": [
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-guide05-02-example-simple-chat-commands",
+      "name": "guide05-02-example-simple-chat-commands",
+      "path": "examples/tutorials/guide05-02-example-simple-chat-commands.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 05: \u2778 Example: Simple Chat Commands",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide05.md#L66",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "4f92ece342c9d1b988b662547349fea7470f85caaa1c2fce3698f0a56ab40f8d",
+      "runtime": "Python",
+      "imports": [
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-guide05-03-script",
+      "name": "guide05-03-script",
+      "path": "examples/tutorials/guide05-03-script.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 05: Script",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide05.md#L139",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "0a913cb1cf6073ea46df23ce4217fa3a9eb95dcbe8d969d527365d6bb7ec4c0c",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "threading",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-guide06-01-default-damage-debug-all-events",
+      "name": "guide06-01-default-damage-debug-all-events",
+      "path": "examples/tutorials/guide06-01-default-damage-debug-all-events.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 06: \u2776 Default Damage Debug (All Events)",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide06.md#L27",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "a58480e0fda0517f74f8533864b905e62e2e53c36e046e14bf0c86e23b8a8b26",
+      "runtime": "Python",
+      "imports": [
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-guide06-02-melee-attacks-only",
+      "name": "guide06-02-melee-attacks-only",
+      "path": "examples/tutorials/guide06-02-melee-attacks-only.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 06: \u2777 Melee Attacks Only",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide06.md#L55",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "0670470dba592e0c04514338d5dcbe0acdafa6d7dc43d1aa4468305ab688ee53",
+      "runtime": "Python",
+      "imports": [
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-guide06-03-add-projectiles",
+      "name": "guide06-03-add-projectiles",
+      "path": "examples/tutorials/guide06-03-add-projectiles.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 06: \u2778 Add Projectiles",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide06.md#L92",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "6629c6d342f8c11b109c13ae2a850d975c8fab2f7b286f496a8dba3b9f2ee2f5",
+      "runtime": "Python",
+      "imports": [
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-guide06-04-remaining-hp-kill-detection",
+      "name": "guide06-04-remaining-hp-kill-detection",
+      "path": "examples/tutorials/guide06-04-remaining-hp-kill-detection.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Guide 06: \u2779 Remaining HP & Kill Detection",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/guide/guide06.md#L129",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "a27f459e5c98f47e4f7cabd81d02170073b18a38efa36daa1b6f6c182d0d78ce",
+      "runtime": "Python",
+      "imports": [
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-basic01-02-player-position",
+      "name": "basic01-02-player-position",
+      "path": "examples/tutorials/basic01-02-player-position.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Basics 01: player_position()",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/basic01.md#L47",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "e817a94910f1f93b90ce625c1f41ff1adfd746a0d42825ea4ef5b46e0dc77776",
+      "runtime": "Python",
+      "imports": [
+        "math",
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-basic01-03-execute-command-str",
+      "name": "basic01-03-execute-command-str",
+      "path": "examples/tutorials/basic01-03-execute-command-str.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Basics 01: execute(command: str)",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/basic01.md#L74",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "d25300af831653d31aae8ab870df9c8f20dfa1f859f474aab501aa96f388faef",
+      "runtime": "Python",
+      "imports": [
+        "math",
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-basic01-06-summon-mobs-with-delay",
+      "name": "basic01-06-summon-mobs-with-delay",
+      "path": "examples/tutorials/basic01-06-summon-mobs-with-delay.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Basics 01: Summon Mobs with Delay",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/basic01.md#L140",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "2971159dce1de462fc1c7fa77a5b8f260a73f13e3669a6fc2f86890bea5f9869",
+      "runtime": "Python",
+      "imports": [
+        "math",
+        "minescript",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-basic01-07-circular-mob-summoning",
+      "name": "basic01-07-circular-mob-summoning",
+      "path": "examples/tutorials/basic01-07-circular-mob-summoning.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Basics 01: Circular Mob Summoning",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/basic01.md#L167",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "de71fa6c9e8443f5c254ae3a3e0de00c29ac73c90983077ee825b15f038dee11",
+      "runtime": "Python",
+      "imports": [
+        "math",
+        "minescript",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-basic01-08-random-mobs-in-a-circle",
+      "name": "basic01-08-random-mobs-in-a-circle",
+      "path": "examples/tutorials/basic01-08-random-mobs-in-a-circle.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Basics 01: Random Mobs in a Circle",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/basic01.md#L195",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "424e8e3afbc6ef5092c3c906038ae79c0b683cdc5806220c6a6b3ebd79531cee",
+      "runtime": "Python",
+      "imports": [
+        "math",
+        "minescript",
+        "random",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-basic02-01-player-press-jump",
+      "name": "basic02-01-player-press-jump",
+      "path": "examples/tutorials/basic02-01-player-press-jump.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Basics 02: player.press_jump()",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/basic02.md#L35",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "4ed49818eb4a8c1e19b0e50948666798699168dcd07123ddc331c934515201fe",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "movement / interaction"
+      ]
+    },
+    {
+      "id": "tutorials-basic02-02-player-get-targeted-block",
+      "name": "basic02-02-player-get-targeted-block",
+      "path": "examples/tutorials/basic02-02-player-get-targeted-block.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Basics 02: player.get_targeted_block()",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/basic02.md#L63",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "a7c4fac95c34b02396f767909517abfe9a5d6c548804ae698c7a7c01d3293c9a",
+      "runtime": "Python",
+      "imports": [
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "movement / interaction"
+      ]
+    },
+    {
+      "id": "tutorials-basic02-03-player-press-use",
+      "name": "basic02-03-player-press-use",
+      "path": "examples/tutorials/basic02-03-player-press-use.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Basics 02: player.press_use()",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/basic02.md#L95",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "2b22e42ebd47201dbd976ccc01477a10982154ba0a92eb8709f62ca66aa96af1",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "movement / interaction",
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-basic02-04-player-inventory",
+      "name": "basic02-04-player-inventory",
+      "path": "examples/tutorials/basic02-04-player-inventory.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Basics 02: player.inventory()",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/basic02.md#L131",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "914529775d3d56bdc2eacce97250c1c7a4d5e17ac8ce8ee0bd1c29783e69b4dc",
+      "runtime": "Python",
+      "imports": [
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-basic02-05-show-inventory-items",
+      "name": "basic02-05-show-inventory-items",
+      "path": "examples/tutorials/basic02-05-show-inventory-items.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Basics 02: Show inventory items",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/basic02.md#L144",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "cd1917fb678322487a7b545cd5de63ab663f875c79103c8e4da7c991186961f8",
+      "runtime": "Python",
+      "imports": [
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-basic02-06-register-chat-listener",
+      "name": "basic02-06-register-chat-listener",
+      "path": "examples/tutorials/basic02-06-register-chat-listener.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Basics 02: register_chat_listener()",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/basic02.md#L171",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "bfc80bf7171410caf72c1efc18317c5af6b3b892859d58849951f9776008ac87",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "movement / interaction"
+      ]
+    },
+    {
+      "id": "tutorials-basic02-07-auto-walk-and-interact",
+      "name": "basic02-07-auto-walk-and-interact",
+      "path": "examples/tutorials/basic02-07-auto-walk-and-interact.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Basics 02: Auto Walk and Interact",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/basic02.md#L201",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "ccf47add6f597e27da71229fc64da588ffbf4f0b2581b58318f4b4eae8b1cb82",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "movement / interaction",
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-basic02-08-auto-fishing-system",
+      "name": "basic02-08-auto-fishing-system",
+      "path": "examples/tutorials/basic02-08-auto-fishing-system.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "Basics 02: Auto Fishing System",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/basic02.md#L229",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "c96683acf9804831d0b1ee2c994e3a881d252be0a0e64231984b78212d5470ed",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": [
+        "movement / interaction",
+        "Minecraft commands / OP may be needed"
+      ]
+    },
+    {
+      "id": "tutorials-plus01-01-title-subtitle-display",
+      "name": "plus01-01-title-subtitle-display",
+      "path": "examples/tutorials/plus01-01-title-subtitle-display.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "plus01: Title & Subtitle Display",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/plus01.md#L30",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "9126cd5cb7baa34a80328771aef491528d56f5f87869ce1580f8f7085282134a",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "minescript_plus",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-plus01-02-actionbar-test",
+      "name": "plus01-02-actionbar-test",
+      "path": "examples/tutorials/plus01-02-actionbar-test.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "plus01: Actionbar Test",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/plus01.md#L44",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "92f61d7408f5473a6474ccf064dc2b14ccf93917862c062c2417a5a1608a7a26",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "minescript_plus",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-plus01-03-check-for-diamond-in-player-inventory",
+      "name": "plus01-03-check-for-diamond-in-player-inventory",
+      "path": "examples/tutorials/plus01-03-check-for-diamond-in-player-inventory.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "plus01: Check for Diamond in Player Inventory",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/plus01.md#L57",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "a76344b56d922fb203c7a8eb4ba6dd09f564d3e07d6fa7b2cd37fb3348e143e9",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "minescript_plus",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-plus01-04-search-for-diamond-in-chest",
+      "name": "plus01-04-search-for-diamond-in-chest",
+      "path": "examples/tutorials/plus01-04-search-for-diamond-in-chest.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "plus01: Search for Diamond in Chest",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/plus01.md#L74",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "eb4dc63a362544b819dc1e8027420bd036b67b0a6262420b89fdf1b30b464255",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "minescript_plus",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-plus01-05-read-text-from-targeted-sign",
+      "name": "plus01-05-read-text-from-targeted-sign",
+      "path": "examples/tutorials/plus01-05-read-text-from-targeted-sign.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "plus01: Read Text from Targeted Sign",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/plus01.md#L92",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "d19a70ba2d30f3ec715e4d95d5b07cf8e559a71d115c32a3f23cc0657b94de43",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "minescript_plus",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-plus01-06-player-information",
+      "name": "plus01-06-player-information",
+      "path": "examples/tutorials/plus01-06-player-information.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "plus01: Player Information",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/plus01.md#L114",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "c6fdd1b8253686314328d0bf1e61132f9d52e66f9b8add95f6e0b5a03b4fe413",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "minescript_plus",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-plus01-07-world-information",
+      "name": "plus01-07-world-information",
+      "path": "examples/tutorials/plus01-07-world-information.py",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "plus01: World Information",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/plus01.md#L141",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "1d43cfa280960ca57803866318b498a074b1a900065526a3f9a11735fa23194a",
+      "runtime": "Python",
+      "imports": [
+        "minescript",
+        "minescript_plus",
+        "time"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "tutorials-pyjinn01-07-java-stream-api-with-pyjinn-lambdas",
+      "name": "pyjinn01-07-java-stream-api-with-pyjinn-lambdas",
+      "path": "examples/tutorials/pyjinn01-07-java-stream-api-with-pyjinn-lambdas.pyj",
+      "package": "tutorials",
+      "kind": "example",
+      "description": "pyjinn01: Java Stream API with Pyjinn Lambdas",
+      "license": "MIT",
+      "source": "https://github.com/sam-ple/minescript-sample/blob/f1ff8518c907ffc91144184768e0b8f3563f585c/docs/tutorials/pyjinn01.md#L76",
+      "revision": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "sha256": "2a23f3a4e97695381bedb5b8f63ae2a9e45eeab2854ca4e58eddbb83543568d1",
+      "runtime": "Pyjinn",
+      "imports": [
+        "minescript"
+      ],
+      "status": "tutorial example / setup and live test pending",
+      "notes": []
+    },
+    {
+      "id": "automine",
+      "name": "automine",
+      "path": "automine.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Mine matching visible blocks while staying in place.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/automine.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\automine cobblestone 120",
+      "sha256": "f6e5674a49b85b67c09eceb6e3dfa125be8a9a2b3f798d5aeb34a84682716202"
+    },
+    {
+      "id": "farm",
+      "name": "farm",
+      "path": "farm.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Harvest and replant ripe wheat, carrots, potatoes, and beetroot.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/farm.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\farm 300",
+      "sha256": "c4910eb56f2e253922ff3b0245f03c5584c8402166a1e8389b349ce91b1f8147"
+    },
+    {
+      "id": "shear",
+      "name": "shear",
+      "path": "shear.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Shear reachable sheep while holding shears.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/shear.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\shear 300",
+      "sha256": "1e30f8bbd55be4d45b733bc29492e05acf5177637289c5c8eef933ce3490f7e5"
+    },
+    {
+      "id": "autofish",
+      "name": "autofish",
+      "path": "autofish.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Cast, detect bobber dips, reel in, and recast while holding a rod.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/autofish.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\autofish 300",
+      "sha256": "bfdc698fef89eb648fcde4e0688f44de21f92232913ede78c723f498022d83a1"
+    },
+    {
+      "id": "inventory",
+      "name": "inventory",
+      "path": "inventory.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Count matching carried items and show available inventory slots.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/inventory.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\inventory wheat",
+      "sha256": "664c0aa9de2aeb18a7e6ec4fa544ef437a5ae3aada35b1065a0ed09f14925882"
+    },
+    {
+      "id": "nearby",
+      "name": "nearby",
+      "path": "nearby.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Locate nearby loaded animals, players, and dropped items.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/nearby.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\nearby 16 sheep",
+      "sha256": "184d10d2999a4ae3f768663dbbd8cc8cca0ff9445c8f05b1d29bc8362af01433"
+    },
+    {
+      "id": "entityinfo",
+      "name": "entityinfo",
+      "path": "entityinfo.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Inspect the entity in your crosshair, including available health.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/entityinfo.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\entityinfo 6",
+      "sha256": "a2babac536267b2fe86358703b78b460b9efef285b6de72a518868015cff73f5"
+    },
+    {
+      "id": "diagnose",
+      "name": "diagnose",
+      "path": "diagnose.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Display Minecraft, Minescript, Python, and loader versions.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/diagnose.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\diagnose",
+      "sha256": "02865af82145e9bdf258a0be97da8f4461260be95b50678eecd3c9a97c24fae9"
+    },
+    {
+      "id": "stripmine",
+      "name": "stripmine",
+      "path": "stripmine.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Strip mining: dig and walk a one-wide, two-high tunnel with bounded hazard checks.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/stripmine.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\stripmine 16 300",
+      "sha256": "cb839e65ec40dfebbffdca440362669e7760f74e78c7e2556eb08e636bb0604f"
+    },
+    {
+      "id": "branchmine",
+      "name": "branchmine",
+      "path": "branchmine.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Branch mining: dig a main tunnel with paired side branches and return to the center.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/branchmine.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\branchmine 16 4 6 600",
+      "sha256": "994d81e674be9c4da6d457244febfc8d13386ebb50fbaaf74e84ff6bf59c01bf"
+    },
+    {
+      "id": "chunkcoords",
+      "name": "chunkcoords",
+      "path": "chunkcoords.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Show your current chunk and within-chunk coordinates.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/chunkcoords.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\chunkcoords",
+      "sha256": "8f1cc76f316ec37d12d954a41fe72aaa015e8b77c3644df9f528ec416eef2cd4"
+    },
+    {
+      "id": "bearing",
+      "name": "bearing",
+      "path": "bearing.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Calculate distance and aiming angles to an XYZ coordinate.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/bearing.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\bearing 0 64 0",
+      "sha256": "f1fb3c6d58699fe300c413bc682271fa9c87b4ca663ca61b005f6e825f4e1b3c"
+    },
+    {
+      "id": "regioncount",
+      "name": "regioncount",
+      "path": "regioncount.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Count block types in a bounded selection without modifying it.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/regioncount.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\regioncount 0 60 0 8 64 8",
+      "sha256": "8b6c40a9943a145527548b1c3374b21cfe1208e4291f6376752ea2972d183c24"
+    },
+    {
+      "id": "orescan",
+      "name": "orescan",
+      "path": "orescan.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Locate ore and ancient debris in nearby loaded client block data.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/orescan.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\orescan 4",
+      "sha256": "5538dd6063cd92ebf58700c5a76b635dfe54e13727267fed449b81de8b8916fb"
+    },
+    {
+      "id": "cropstatus",
+      "name": "cropstatus",
+      "path": "cropstatus.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Count ripe and still-growing crops near you.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/cropstatus.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\cropstatus 4",
+      "sha256": "778e99b084d771d009556ab3527145593d03fd8ae5a096e10cb2b9f8bededd18"
+    },
+    {
+      "id": "branchplan",
+      "name": "branchplan",
+      "path": "branchplan.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Preview branch-tunnel endpoint coordinates without digging.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/branchplan.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\branchplan 16 4 6",
+      "sha256": "7fe26030a06cef3dbf6ecd2f6ea37eae1986d3ba1a52593b1aef171117a12992"
+    },
+    {
+      "id": "worldclock",
+      "name": "worldclock",
+      "path": "worldclock.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Display the in-game clock, dimension, and weather.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/worldclock.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\worldclock",
+      "sha256": "3f742a3b879bebe23f2d8aadb4c6feb9a0b60cfb064f498f9bd631885c934e11"
+    },
+    {
+      "id": "blockwatch",
+      "name": "blockwatch",
+      "path": "blockwatch.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Report changes to the block targeted when the script starts.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/blockwatch.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\blockwatch 300",
+      "sha256": "38640d539fc3fdb86420dd63f9d01f8298f0177b121bd80de67cfb52c68aadd5"
+    },
+    {
+      "id": "pickupwatch",
+      "name": "pickupwatch",
+      "path": "pickupwatch.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Report item pickups by your own player.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/pickupwatch.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\pickupwatch 300",
+      "sha256": "f0b5565e61fbe903251edb8662b3009ffaaa862780e7110c29432e5ec0ba2834"
+    },
+    {
+      "id": "inventorywatch",
+      "name": "inventorywatch",
+      "path": "inventorywatch.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Report increases and decreases in carried item counts.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/inventorywatch.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\inventorywatch 300",
+      "sha256": "dd38157c5e3cbcb5859886d3c2a71a00e82d745607b6add6bdfb7a5168b20d24"
+    },
+    {
+      "id": "equip",
+      "name": "equip",
+      "path": "equip.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Find an item in carried storage and select it in the hotbar.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/equip.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\equip iron_pickaxe",
+      "sha256": "7290d41f2793b2c0961dae44ea15223b765aed921199bcf5003bf0af92edf00b"
+    },
+    {
+      "id": "library",
+      "name": "library",
+      "path": "library.py",
+      "package": "maintained",
+      "kind": "command",
+      "description": "Search, inspect, and explicitly launch entries in this catalog.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/library.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "maintained / offline checked / live test pending",
+      "notes": [],
+      "example": "\\library list mining",
+      "sha256": "06baec3a419ac8f43e3ba12a003aa55b451ac7f9559105924291fd7a5fb6ca69"
+    },
+    {
+      "id": "automation_common",
+      "name": "automation_common",
+      "path": "automation_common.py",
+      "package": "maintained",
+      "kind": "support",
+      "description": "Shared library helper; import rather than launch.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/automation_common.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "support module",
+      "notes": [],
+      "sha256": "43754a781dc147d1d45cef4c911dcb65007cad75c719b5efd7cacce6d8c03ee7"
+    },
+    {
+      "id": "library_tools",
+      "name": "library_tools",
+      "path": "library_tools.py",
+      "package": "maintained",
+      "kind": "support",
+      "description": "Shared library helper; import rather than launch.",
+      "license": "MIT",
+      "source": "https://github.com/desquerteur/Minescript-Library/blob/main/library_tools.py",
+      "revision": "maintained locally",
+      "runtime": "Python",
+      "status": "support module",
+      "notes": [],
+      "sha256": "9166ef7958d1770d89ca6cce22411c704fd6bcee35476cdf0d8428f1088b928f"
+    }
+  ],
+  "packages": [
+    {
+      "id": "official",
+      "folder": "community/official",
+      "url": "https://github.com/maxuser0/minescript-scripts",
+      "commit": "874536fe0a65068721559b56eaab8d652ce449ba",
+      "license": "MIT"
+    },
+    {
+      "id": "official-extras",
+      "folder": "community/official-extras",
+      "url": "https://github.com/SmartBoty/Minescript",
+      "commit": "f487903ff47c4070fe1da4317b72af75d1bf7794",
+      "license": "MIT"
+    },
+    {
+      "id": "razrcraft",
+      "folder": "community/razrcraft",
+      "url": "https://github.com/R4z0rX/minescript-scripts",
+      "commit": "7f74c3861cbf53c36c8acb12c9f3bad7e90dec75",
+      "license": "MIT"
+    },
+    {
+      "id": "julian",
+      "folder": "community/julian",
+      "url": "https://github.com/JulianIsLost/minescript-scripts",
+      "commit": "384f065a5a3c4c8bfb9dd6494520c2b85eb81625",
+      "license": "MIT"
+    },
+    {
+      "id": "smooth-mining",
+      "folder": "community/smooth-mining",
+      "url": "https://github.com/Minescript-Snippets/Macroes",
+      "commit": "cba6e2722b64b37654f30529c96b1396a58779fe",
+      "license": "MIT"
+    },
+    {
+      "id": "pattern-farming",
+      "folder": "community/pattern-farming",
+      "url": "https://github.com/Twilight-Lab/Minescript-Macroes",
+      "commit": "0c01b299d09e2b82522c437fde232348bc4a7bb2",
+      "license": "MIT"
+    },
+    {
+      "id": "skyblock",
+      "folder": "community/skyblock",
+      "url": "https://github.com/cantaloupasta/Minescript",
+      "commit": "a1c79fe3b83054f0dafcc4a01e996f6d2d0356cf",
+      "license": "MIT"
+    },
+    {
+      "id": "camera",
+      "folder": "community/camera",
+      "url": "https://github.com/joelkoen/minescript-camera",
+      "commit": "5373853ef51cfedc7b72a68cafb58aa71005bf17",
+      "license": "MIT"
+    },
+    {
+      "id": "minekit",
+      "folder": "community/minekit",
+      "url": "https://github.com/hakenshi/minekit",
+      "commit": "dbf9fd11ccb542f82afefee98e411f03e74c4f2a",
+      "license": "MIT"
+    },
+    {
+      "id": "pathfinding",
+      "folder": "community/pathfinding",
+      "url": "https://github.com/n-aoH/Minescript-Pathfinder",
+      "commit": "9ab9b73b5e744a00fd41cab10e2efdd59af4900f",
+      "license": "MIT"
+    },
+    {
+      "id": "theta-star",
+      "folder": "community/theta-star",
+      "url": "https://github.com/hyshenn/thetaSTAR",
+      "commit": "05f8b8446d8f1181c08518c5813117e0035f7c7e",
+      "license": "MIT"
+    },
+    {
+      "id": "tutorials",
+      "folder": "examples/tutorials",
+      "url": "https://github.com/sam-ple/minescript-sample",
+      "commit": "f1ff8518c907ffc91144184768e0b8f3563f585c",
+      "license": "MIT"
+    }
+  ],
+  "rejected": [],
+  "counts": {
+    "command": 53,
+    "support": 41,
+    "example": 48,
+    "programs": 101
+  }
+}

@@ -1,0 +1,359 @@
+#!python
+from minescript import *
+
+# Required Java classes
+Gizmos          = JavaClass("net.minecraft.gizmos.Gizmos")
+GizmoStyle      = JavaClass("net.minecraft.gizmos.GizmoStyle")
+TextGizmo_Style = JavaClass("net.minecraft.gizmos.TextGizmo$Style")
+BlockPos        = JavaClass("net.minecraft.core.BlockPos")
+Vec3            = JavaClass("net.minecraft.world.phys.Vec3")
+AABB            = JavaClass("net.minecraft.world.phys.AABB")
+Direction       = JavaClass("net.minecraft.core.Direction")
+ARGB            = JavaClass("net.minecraft.util.ARGB")
+
+mc = JavaClass("net.minecraft.client.Minecraft").getInstance()
+
+Instant = JavaClass("java.time.Instant")
+
+
+cnt = 0
+
+color       = ARGB.color(0, 0, 200, 255)
+fill_color  = ARGB.color(50,  0, 200, 255)
+style       = GizmoStyle.stroke(color)
+filled      = GizmoStyle.strokeAndFill(color, JavaFloat(1.5), fill_color)
+
+cache = []
+
+nodes = {}
+
+target = list(player_get_targeted_block(max_distance=500).position)
+#target = [145, 131, -351]
+
+target[0] = float(target[0])
+target[1] = float(target[1] + 1)
+target[2] = float(target[2])
+
+
+
+GREED = 5
+
+startingdist = 0
+max_fall_dist = 5
+
+max_operations = 800
+
+
+    
+
+target_paths = []
+
+
+
+
+AIRLIKE = ["air", "snow", "leaf_litter", "short_dry_grass", "short_grass", "tall_dry_grass", "tall_grass", "poppy", "wildflowers",
+           "oxeye_daisy", "peony", "wheat", "potatoes", "carrots", "dandelion", "azure_bluet", "water", "ladder", "torch", "wall_torch", "vine"]
+DANGER = ["powder_snow","lava", "oak_fence", "spruce_fence"]
+VERTICAL = ["ladder", "water", "vine"]
+
+
+def get_path(end, start=get_player().position):
+
+    target = list(end)
+    target[0] = float(target[0])
+    target[1] = float(target[1])
+    target[2] = float(target[2])
+
+    global q, startingdist
+    plr = get_player()
+    pos = plr.position
+    pos[0] = int(round(pos[0]-.5))
+    pos[1] = int(round(pos[1]-.5))
+    pos[2] = int(round(pos[2]-.5))
+
+    startingdist = (abs(pos[0] - target[0]) + abs(pos[1] - target[1]) + abs(pos[2] - target[2]) * 2) + 20
+
+    block = list(pos)
+    q = [[block,0,[], 0]]
+    tunnel(block,0, [])
+
+def getdist(start, end = target):
+    x = start[0] - end[0]
+    y = start[1] - end[1] 
+    z = start[2] - end[2]
+
+    return (abs(x*x) + abs(y*y) + abs(z*z))**.5
+
+def add_to_q(blk, d, p, h):
+    global q
+    i = 0
+    #print(len(q))
+    heuristic = d + h*GREED    
+    while i < len(q):
+        node = q[i]
+        if heuristic < node[3]:
+            q.insert(i,[blk, d, p, heuristic])
+            return
+        elif heuristic - node[3] <= .2 and h-d < heuristic-node[1]:
+            q.insert(i,[blk, d, p, heuristic])
+            return
+        i += 1
+    if i == len(q):
+        q.append([blk, d, p, heuristic])
+    
+
+def tunnel(block, depth, path):
+    global q
+    operations = 0
+    i = 0
+    while operations < max_operations:
+        operations += 1
+        instruction = q.pop(0)
+        block, depth, path, heuristic = instruction
+
+        
+
+        global nodes, target_paths
+        p = list(path)
+        p.append(block)
+        d = depth + 1
+        if block == target:
+            target_paths.append(p)
+            return
+        if d < 200:
+
+            blk = list(block)
+            blk[1] += 2
+            if get(*blk) in AIRLIKE:
+                max_height = 1
+            else:
+                max_height = 0
+
+            blk = list(block)
+            if has(blk,d,verticaltest=True):
+                blk[1] += 1
+                
+                if has(blk,d):
+                    add_to_q(blk, d, p, getdist(blk))
+            if True:
+                #all the exploration methods
+                height = max_height
+                
+
+                
+                while height > -max_fall_dist:
+                    blk = list(block)
+                    blk[1] += height
+                    blk[0] += 1
+                    if not get(*blk) in AIRLIKE:
+                        
+                        break
+                    result = has(blk,d)
+                    if result:
+                        add_to_q(blk, d, p, getdist(blk))
+                        break
+                    
+                    height -= 1
+
+                height = max_height
+                
+
+
+                
+                while height > -max_fall_dist:
+                    blk = list(block)
+                    blk[1] += height
+                    blk[0] -= 1
+                    if not get(*blk) in AIRLIKE:
+                        break
+                    result = has(blk,d)
+                    if result:
+
+                        add_to_q(blk, d, p, getdist(blk))
+                        break
+
+                    
+
+                    height -= 1
+
+                height = max_height
+
+                
+                while height > -max_fall_dist:
+                    blk = list(block)
+                    blk[1] += height
+                    blk[2] -= 1
+                    if not get(*blk) in AIRLIKE:
+                        break
+                    result = has(blk,d)
+                    if result:
+                        add_to_q(blk, d, p, getdist(blk))
+                        break
+                    
+
+
+                    height -= 1
+                height = max_height
+                
+                while height > -max_fall_dist:
+                    blk = list(block)
+                    blk[1] += height
+                    blk[2] += 1
+                    if not get(*blk) in AIRLIKE:
+                        break
+                    result = has(blk,d)
+                    if result:
+
+                        add_to_q(blk, d, p, getdist(blk))
+                        break
+                    
+
+
+                    height -= 1
+
+            #Move Down
+
+            blk = list(block)
+            blk[1] -= 1
+            if get(*blk) in AIRLIKE:
+                result = has(blk,d)
+
+                if result:
+                    add_to_q(blk, d, p, getdist(blk))
+            
+        
+            
+
+        
+    
+block_cache = {}
+def get(x,y,z):
+    global  block_cache
+   
+    test = (x,y,z)
+
+    if not test in block_cache:
+        block_cache[test] = getblock(x,y,z).split(":")[1].split("[")[0]
+    return block_cache[test]
+
+def has(block, d, verticaltest = False, redoFINE = False): # 0 -> no | 1 -> Yep | 2 -> Don't even
+    global nodes
+    x,y,z = block
+    feet = get(x,y,z)
+    head = get(x,y+1,z)
+
+    if verticaltest:
+        return feet in VERTICAL or head in VERTICAL
+    
+    flag = True
+
+    key = block
+    old_depth = nodes.get(block)
+    if old_depth is not None and old_depth <= d:
+        return 0
+    
+
+    if flag:
+        nodes[key] = d
+        x,y,z = block
+
+        
+        if not feet in AIRLIKE: # Does it qualify to stand?
+            return 0
+        if not head in AIRLIKE:
+            return 0
+
+        
+        below = get(x,y-1,z)
+        if below in DANGER:
+            return 0
+        if below in AIRLIKE and not below in VERTICAL:
+            return 0
+            
+        else:
+            if below in AIRLIKE and below in VERTICAL:
+                cache.append([x,y,z,x+1,y+1,z+1])
+                return 2
+            cache.append([x,y,z,x+1,y+1,z+1])
+            return 1
+    
+
+def follower(render):
+        """ TODO: Make follower
+        """
+        global currentnode
+        
+        
+
+
+if __name__ == "__main__":
+    start = Instant.now().toEpochMilli()
+    get_path(end=target)
+    end = Instant.now().toEpochMilli()
+    print(f"Time taken: {end-start}ms")
+
+    smallest = 999999
+    p = []
+    for path in target_paths:
+        dist = len(path)
+        if dist < smallest:
+            p = path
+            smallest = dist
+
+
+    if len(p) > 0:
+        print("Path length: "+str(len(p)))
+    else:
+        print("No suitable path found.")
+
+
+    cache = []
+    for node in p:
+        x,y,z = node
+        cache.append([x,y,z,x+1,y+1,z+1])
+
+    #print(len(nodes))
+
+    def on_render(event):
+        #print(len(filling))
+        for pair in cache:
+           box = AABB(*pair)
+           Gizmos.cuboid(box, filled).setAlwaysOnTop()
+
+
+    def getclosedist(p1, p2):
+        x1,y1,z1 = p1
+        x2,y2,z2 = p2
+
+        x = (x1-x2)
+        z = (z1-z2)
+        y = ((y1-y2))
+
+        if y > 0: #if we go down
+            y *= .8
+
+        if y < -1: #going up more
+            y *= 5000
+
+
+
+        return ((x*x)+(y*y)+(z*z))**.5
+
+
+
+
+
+    
+
+
+
+
+    currentnode = 0
+    follower_thread = add_event_listener("render",follower)
+    add_event_listener("render",on_render)
+
+
+    #print(len(nodes))
+    #print(len(q))
+
+
