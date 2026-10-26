@@ -551,6 +551,7 @@ def main(args):
     if not client.grounded() and not in_water:
         raise Stopped("Start on the ground or in open surface water.")
     destination = options.destination
+    m.echo(f"Walking destination: {destination.describe()}.")
     if arrived(destination, position, afloat=in_water, submerged=in_water and client.underwater()):
         m.echo("Already at the destination.")
         return

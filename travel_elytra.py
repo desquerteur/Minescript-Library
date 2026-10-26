@@ -471,7 +471,13 @@ class Flight:
             self.landing = landing_area(target, self.session.position, self.native)
             fallback = True
         self.fallback = fallback
-        m.echo("Landing approach: rockets off. Preparing to finish on foot.")
+        offset = self.destination.distance((self.landing.x, self.landing.y, self.landing.z))
+        m.echo(
+            f"Landing spot: {self.landing.describe()}; {offset:.1f} blocks from the destination."
+        )
+        if fallback:
+            m.echo("Using a nearby landing spot. The original destination is unchanged.")
+        m.echo("Landing approach: rockets off. Walking will finish the remaining distance.")
 
     def fly(self):
         self.takeoff()
@@ -483,7 +489,7 @@ class Flight:
                     raise Stopped(
                         "Touched ground outside the landing level. Check your surroundings."
                     )
-                m.echo("Landed. Continuing toward the requested coordinates on foot.")
+                m.echo("Landed. Letting movement settle before finishing on foot.")
                 return
             now = time.monotonic()
             distance = self.destination.distance(self.session.position)
@@ -538,6 +544,41 @@ class Flight:
         )
 
 
+def prepare_walk(session, destination):
+    """Do not hand an airborne/step-transition snapshot straight to the walker."""
+    release("forward", "sprint", "jump")
+    deadline, stable_since = time.monotonic() + 3, None
+    while time.monotonic() < deadline:
+        session.check(force=stable_since is not None and time.monotonic() - stable_since >= 0.3)
+        position, velocity = session.position, session.velocity
+        stable = (
+            session.client.grounded()
+            and abs(position[1] - round(position[1])) <= 0.2
+            and abs(velocity[1]) < 0.08
+            and math.hypot(velocity[0], velocity[2]) < 0.12
+        )
+        now = time.monotonic()
+        if stable:
+            if stable_since is None:
+                stable_since = now
+            elif now - stable_since >= 0.3:
+                m.echo(
+                    f"On ground at X={session.position[0]:.3f}, Y={session.position[1]:.3f}, "
+                    f"Z={session.position[2]:.3f}; "
+                    f"{destination.distance(session.position):.1f} blocks left to {destination.describe()}."
+                )
+                return
+        else:
+            stable_since = None
+        session.wait(0.05)
+    x, y, z = session.position
+    raise Stopped(
+        f"Walking could not start after landing at X={x:.3f}, Y={y:.3f}, Z={z:.3f}. "
+        f"Stand still on full blocks, then use \\travel with the original destination: "
+        f"{destination.describe()}."
+    )
+
+
 def main(args):
     options = arguments(args, flight=True)
     exclusive()
@@ -548,6 +589,7 @@ def main(args):
     available = rockets()
     if not available:
         raise Stopped("Carry plain firework rockets without explosion stars in your inventory.")
+    m.echo(f"Flight destination: {options.destination.describe()}.")
     if options.check:
         m.echo(
             f"Flight check: hunger {client.food_level()}/20; Elytra durability {remaining}; "
@@ -566,6 +608,7 @@ def main(args):
         flight = Flight(session, options.destination, options.height)
         try:
             flight.fly()
+            prepare_walk(session, options.destination)
         finally:
             flight.close()
     # Reuse the walking engine for the final meters or if fuel/wings ran low.

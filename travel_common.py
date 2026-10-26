@@ -147,6 +147,10 @@ class Destination:
     z: float
     y: float | None = None
 
+    def describe(self):
+        height = "surface" if self.y is None else f"{self.y:.3f}"
+        return f"X={self.x:.3f}, Y={height}, Z={self.z:.3f}"
+
     def distance(self, position):
         return math.hypot(self.x - position[0], self.z - position[2])
 
@@ -191,7 +195,7 @@ def arguments(args, *, flight=False):
         y = None
     if max(abs(x), abs(z)) > 29_999_000 or y is not None and not -2048 <= y <= 2048:
         raise ValueError("Destination is outside supported world coordinates.")
-    options.destination = Destination(x, z, y)
+    options.destination = Destination(x=x, z=z, y=y)
     return options
 
 

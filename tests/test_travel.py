@@ -279,6 +279,94 @@ def test_landing_waits_for_existing_rocket_to_finish(game):
         game.native.burn.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    "args,expected",
+    [
+        (["1", "1"], common.Destination(1, 1)),
+        (["1200", "67", "-500"], common.Destination(1200, -500, 67)),
+        (["~100", "~-20"], common.Destination(110.5, -62.25)),
+        (["~100", "~2", "~-20"], common.Destination(110.5, -62.25, 69)),
+    ],
+)
+def test_axes_and_relative_coordinates_use_the_correct_origin(game, args, expected):
+    game.player.position = (10.5, 67, -42.25)
+    for flight in (False, True):
+        assert common.arguments(args, flight=flight).destination == expected
+
+
+def test_destination_display_labels_x_y_z_without_changing_values():
+    assert common.Destination(1, 1).describe() == "X=1.000, Y=surface, Z=1.000"
+    target = common.Destination(12345678.125, -7654321.25, 67)
+    assert target.describe() == "X=12345678.125, Y=67.000, Z=-7654321.250"
+    assert target.x == 12345678.125 and target.z == -7654321.25
+
+
+def test_walking_handoff_waits_for_touchdown_snapshot_and_momentum_to_settle(game, monkeypatch):
+    game.player.position, game.player.velocity = (1.7, 67.35, -3.7), (0, -0.15, 0.2)
+
+    def sleep(seconds):
+        game.clock.now += seconds
+        if game.clock.now >= 0.2:
+            game.player.position, game.player.velocity = (1.7, 67, -3.7), (0, 0, 0)
+
+    monkeypatch.setattr(common.time, "sleep", sleep)
+    with common.Session(game.client) as session:
+        elytra.prepare_walk(session, common.Destination(1, 1))
+    assert game.clock.now >= 0.5
+    assert any("4.8 blocks left to X=1.000" in str(args) for args in api.echo.call_args_list)
+    assert call(True) not in api.player_press_forward.call_args_list
+
+
+def test_unsupported_touchdown_reports_actual_position_and_original_destination(game):
+    game.player.position = (1.7, 67.5, -3.7)
+    with common.Session(game.client) as session, pytest.raises(common.Stopped) as error:
+        elytra.prepare_walk(session, common.Destination(1, 1))
+    assert "Y=67.500" in str(error.value)
+    assert "original destination: X=1.000, Y=surface, Z=1.000" in str(error.value)
+    assert call(True) not in api.player_press_forward.call_args_list
+
+
+def test_f8_during_touchdown_settling_stops_before_walking(game):
+    def event(*args, **kwargs):
+        if game.clock.now >= 0.1:
+            return NS(key=297, action=1)
+        raise queue.Empty
+
+    api.EventQueue.return_value.get.side_effect = event
+    with common.Session(game.client) as session, pytest.raises(common.Stopped, match="F8"):
+        elytra.prepare_walk(session, common.Destination(1, 1))
+    assert call(True) not in api.player_press_forward.call_args_list
+
+
+def test_flight_handoff_reaches_original_coordinates_after_settling(game, monkeypatch):
+    """Exercise the actual walker after the landing boundary, without flying."""
+    game.player.position = (20, 67, -50)
+    state = walking_simulation(game, monkeypatch)
+    api.getblocklist.side_effect = lambda positions: [
+        "minecraft:stone" if p[1] <= 66 else "minecraft:air" for p in positions
+    ]
+    api.player_inventory.return_value = [NS(item="minecraft:firework_rocket", count=64, slot=1)]
+    original_sleep = common.time.sleep
+    landed_at = []
+
+    def landed(_):
+        game.player.position, game.player.velocity = (1.7, 67.35, -3.7), (0, -0.15, 0.2)
+        landed_at.append(game.clock.now)
+
+    def sleep(seconds):
+        original_sleep(seconds)
+        if landed_at and game.clock.now - landed_at[0] >= 0.2:
+            x, _, z = game.player.position
+            game.player.position, game.player.velocity = (x, 67, z), (0, 0, 0)
+
+    monkeypatch.setattr(elytra.Flight, "fly", landed)
+    monkeypatch.setattr(common.time, "sleep", sleep)
+    elytra.main(["1", "1"])
+    assert common.Destination(1, 1).reached(game.player.position)
+    assert call("Arrived at the walking destination.") in api.echo.call_args_list
+    assert not state.forward
+
+
 @pytest.fixture(autouse=True)
 def game(monkeypatch):
     api.reset_mock(return_value=True, side_effect=True)
@@ -836,6 +924,8 @@ def test_flight_transitions_to_landing_and_then_walking(game, monkeypatch, short
         x, y, z = game.player.position
         if landings:
             y = max(64, y - seconds * 15)
+            if y == 64:
+                game.player.velocity = (0, 0, 0)
         else:
             z += seconds * 30
         game.player.position = (x, y, z)

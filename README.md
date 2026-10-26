@@ -23,6 +23,14 @@ Use `X Z` when you do not know the surface height. `X Y Z` expects a reachable
 feet height, not an underground or midair point. Relative coordinates work:
 `\travel ~100 ~-200` or `\travel ~100 ~ ~-200`.
 
+For example, `\travel_elytra 1 1` means **X=1, Z=1**, with surface height chosen
+automatically. The resolved destination is printed with X/Y/Z labels before
+travel starts, including during `--check`. The selected landing patch is shown
+separately, with its distance from the original destination; a nearby touchdown
+is followed by walking to the original point. After touchdown, the script briefly
+waits for grounded position and momentum to settle before handing over to walking.
+If walking cannot start, it prints the actual position and the unchanged goal.
+
 There is no overall time or distance limit. Commands finish on arrival, on a
 stop request, or when they cannot continue. Run one traveler at a time.
 
