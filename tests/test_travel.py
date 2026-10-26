@@ -192,6 +192,8 @@ def test_native_wrapper_releases_embedded_script_on_close(monkeypatch):
         ((20, 80, 220), (1, -0.2, 1)),
         ((0, 100, 200), (0, -0.2, 1)),
         ((0, 68, 200), (0, -0.1, 0.1)),
+        ((0, 328, 100), (0, -0.2, 1.4)),
+        ((0, 328, -300), (0, -0.2, 1.4)),
     ],
 )
 @pytest.mark.parametrize("interval", [4, 10])
@@ -227,6 +229,63 @@ def test_fuel_saving_glides_for_more_than_four_seconds_without_boost(game):
         flight.boost_until = 0
         flight.landing = common.Destination(0, 0, 64)
         assert not flight.needs_boost(60)
+
+
+def test_elytra_defaults_to_build_limit_and_keeps_explicit_lower_override():
+    assert common.arguments(["1000", "500"], flight=True).height is None
+    assert common.arguments(["1000", "500", "--height", "80"], flight=True).height == 80
+
+
+@pytest.mark.parametrize("highest_block", [319, 255, 511, -1])
+def test_build_ceiling_is_first_air_level_above_top_buildable_block(highest_block):
+    client = object.__new__(common.Client)
+    client.minecraft = NS(level=NS(getMaxY=lambda: highest_block))
+    assert client.build_ceiling() == highest_block + 1
+
+
+@pytest.mark.parametrize("ceiling", [320, 256, 512])
+def test_default_cruise_uses_dimension_ceiling_not_start_or_goal(game, ceiling):
+    game.client.build_ceiling.return_value = ceiling
+    with common.Session(game.client) as session:
+        flight = elytra.Flight(session, common.Destination(1000, 0, 90), None)
+        assert flight.cruise_y == ceiling + 8
+        assert flight.cruise_floor() > ceiling
+        session.position, session.velocity = (0, ceiling + 7, 0), (0, -0.15, 1.1)
+        assert not flight.needs_boost(60)
+        session.position = (0, ceiling + 3, 0)
+        assert flight.needs_boost(60)
+        flight.boost_until = 61
+        assert not flight.needs_boost(60)
+        flight.boost_until = 0
+        flight.landing = common.Destination(1000, 0, 64)
+        assert not flight.needs_boost(60)
+
+
+@pytest.mark.parametrize("ceiling", [256, 320, 512])
+def test_powered_climb_does_not_stop_at_old_fixed_height(game, ceiling):
+    game.client.build_ceiling.return_value = ceiling
+    api.getblocklist.side_effect = flat_blocks
+    game.player.position = (0, ceiling - 5, 0)
+    with common.Session(game.client) as session:
+        flight = elytra.Flight(session, common.Destination(1000, 0), None)
+        flight.climbing, flight.boost_until = True, 10
+        flight.steer()
+        assert api.player_set_orientation.call_args.args[1] == -55
+        game.player.position = (0, flight.cruise_y - 2, 0)
+        game.clock.now += 0.2
+        flight.steer()
+        assert api.player_set_orientation.call_args.args[1] == 0
+
+
+def test_obstacle_response_never_lowers_build_limit_cruise_to_310(game):
+    game.player.position, game.player.velocity = (0, 324, 0), (0, 0, 1)
+    api.getblocklist.side_effect = lambda positions: [
+        "minecraft:stone" if p[2] == 16 else "minecraft:air" for p in positions
+    ]
+    with common.Session(game.client) as session:
+        flight = elytra.Flight(session, common.Destination(0, 1000), None)
+        assert flight.obstacles()
+        assert flight.cruise_y == 328
 
 
 def test_landing_search_accepts_five_by_five_and_searches_beyond_four_blocks():
@@ -679,6 +738,7 @@ def game(monkeypatch):
         common.time, "sleep", lambda seconds: setattr(clock, "now", clock.now + max(seconds, 0.001))
     )
     client = NS(
+        build_ceiling=Mock(return_value=320),
         food_level=Mock(return_value=20),
         grounded=Mock(return_value=True),
         flying=Mock(return_value=True),
@@ -1202,15 +1262,18 @@ def test_advanced_obstacle_causes_a_climb_before_near_collision(game):
 
 
 @pytest.mark.parametrize("shortage", [None, "fuel", "wings", "food"])
-def test_flight_transitions_to_landing_and_then_walking(game, monkeypatch, shortage):
+@pytest.mark.parametrize("altitude", [120, 328])
+def test_flight_transitions_to_landing_and_then_walking(game, monkeypatch, shortage, altitude):
     """Test controller transitions, not Minecraft's flight physics."""
-    game.player.position, game.player.velocity = (0.5, 120, 0.5), (0, 0, 1)
+    game.player.position, game.player.velocity = (0.5, altitude, 0.5), (0, 0, 1)
     api.player_inventory.return_value = [NS(item="minecraft:firework_rocket", count=64, slot=1)]
     game.client.grounded.side_effect = lambda: game.player.position[1] <= 64
     game.client.flying.side_effect = lambda: game.player.position[1] > 64
     api.getblocklist.side_effect = flat_blocks
     if shortage == "wings":
-        game.client.wings_remaining.side_effect = [100, 50, 50, 50, 50, 50, 50]
+        game.client.wings_remaining.side_effect = (
+            lambda: 100 if game.client.wings_remaining.call_count == 1 else 50
+        )
     if shortage == "food":
         game.client.food_level.return_value = 14
     if shortage == "fuel":
@@ -1222,6 +1285,8 @@ def test_flight_transitions_to_landing_and_then_walking(game, monkeypatch, short
     original = elytra.Flight.begin_landing
 
     def begin_landing(self, *, fallback=False):
+        if shortage is None:
+            assert self.destination.distance(self.session.position) <= 160
         landings.append(fallback)
         return original(self, fallback=fallback)
 

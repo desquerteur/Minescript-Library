@@ -153,7 +153,7 @@ options afterward, as in the examples.
 | --- | --- | --- | --- | --- |
 | `--eat-at POINTS` | Both | `14` | Integers `1` through `19` | Start eating when hunger is at or below this many points out of 20. |
 | `--check` | Both | Off | No value | Check without moving, eating, selecting an item, or using rockets. Walking checks a local route; Elytra reports equipment and flight state. |
-| `--height BLOCKS` | Elytra only | `50` | Integers `25` through `120` | Set the flight altitude reference above the higher of the starting and explicitly requested destination heights, capped at Y=310. |
+| `--height BLOCKS` | Elytra only | Dimension build limit + 8 | Integers `25` through `120` | Optional lower-altitude override: reference above the higher of start and explicit destination Y, capped at build limit + 8. Omit to cruise above the build limit. |
 | `--help` or `-h` | Both | — | No value | Print the command's built-in help without starting travel. |
 
 There is no overall trip duration or distance option. There is also no sprint,
@@ -391,12 +391,13 @@ off before takeoff. An equipment check still requires usable wings and rockets.
 
 ### Rocket-saving flight
 
-Rocket-saving behavior is the default:
+Rockets are controlled by altitude feedback:
 
 1. One rocket powers a climb.
 2. The bot switches to a shallow glide and spends the gained altitude.
 3. Another rocket is requested when altitude runs low and the previous climb
-   has ended.
+   has ended. The default keeps a tight reserve above the build limit;
+   an explicit `--height` permits a wider glide to save rockets.
 
 There is no fixed four-second rocket loop. The duration of the held rocket is
 read, explosive rockets are rejected again inside the game, and an individual
@@ -412,19 +413,30 @@ not necessarily mean the same number of inventory items was consumed.
 \travel_elytra 1000 500 --height 80
 ```
 
-The default height setting is 50 blocks, with an accepted range of 25–120.
-It sets an altitude reference above the higher of the start and the explicitly
-requested destination Y. With `X Z`, the starting height supplies that reference.
-The reference is capped at Y=310. Renewed climbs normally begin 25 blocks below
-the reference.
+Without `--height`, the bot reads the current dimension's actual build limit
+and targets **8 blocks above it**. In a standard Overworld this is **Y=328**,
+above the first air level at Y=320. Renewed climbs begin below Y=324 once the
+previous climb has ended. The clearance reserve avoids deliberately gliding
+back into the buildable layer. Powered climbs no longer flatten at the old
+fixed Y=300 threshold. The cruise target and build limit are printed on start.
 
-This is an altitude budget, not a constant-height lock or guaranteed clearance
-above every mountain. The bot scans ahead, but it is not a complete
-three-dimensional flight pathfinder.
+An explicit `--height 80` instead requests 80 blocks above the higher of the
+start and explicit destination Y; accepted values remain 25–120. That reference
+is capped at the dimension's build limit plus 8, with renewed climbs normally
+beginning 25 blocks below it.
+
+Build-limit cruising can spend more rockets than a lower, wider glide.
+Takeoff and landing still cross terrain, so obstacle checks remain active.
+Neither profile is a constant-height lock or a complete three-dimensional
+flight pathfinder. Short trips can enter the landing approach before reaching
+the cruise target. Unusual physics or server restrictions can affect clearance.
 
 ### Approach, landing, and the walking finish
 
-The bot searches loaded surface heights within **24 blocks** of the requested
+The normal landing search begins within **160 horizontal blocks** of the goal,
+so high cruising does not request a destination surface hundreds of blocks
+away in unloaded chunks. The bot searches loaded surface heights within
+**24 blocks** of the requested
 X/Z for a **dry, clear 5×5 patch**. With `X Y Z`, that patch must be at the
 requested feet height. With `X Z`, it chooses a suitable surface height.
 

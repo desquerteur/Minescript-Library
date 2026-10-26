@@ -34,8 +34,8 @@ height. `Y=surface` in chat means no particular destination Y was supplied.
 | `\travel 1000 500` | Walk/swim to X=1000, Z=500 along reachable terrain. |
 | `\travel 1000 67 500` | Also require destination feet Y=67. |
 | `\travel ~100 ~-50` | Move toward a goal offset from the command's starting X/Z. |
-| `\travel_elytra 1000 500` | Fly, choose a nearby landing patch, then finish at the original goal on foot. |
-| `\travel_elytra 1000 500 --height 80` | Use an 80-block flight altitude reference; the default is 50. |
+| `\travel_elytra 1000 500` | Cruise above the dimension's build limit, land nearby, then finish at the original goal on foot. |
+| `\travel_elytra 1000 500 --height 80` | Override the default build-limit cruise with an 80-block altitude reference above start/goal. |
 | `\travel 1000 500 --eat-at 16` | Eat at 16/20 hunger points or below; the default is 14. Both commands support this option. |
 | `\travel 1000 500 --check` | Check without starting movement. Both commands support `--check`. |
 | `\travel --help` / `\travel_elytra --help` | Print the built-in options. |

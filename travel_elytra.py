@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Minescript-Library contributors
-r"""Rocket-assisted flight: \travel_elytra X Z or X Y Z [--height 50] [--check].
+r"""Rocket-assisted flight: \travel_elytra X Z or X Y Z [--height BLOCKS] [--check].
 
 Wear an Elytra, carry plain rockets and ordinary food. Clear outdoor takeoff
 and a dry landing area are required. F8 releases controls, NOT momentum.
@@ -267,12 +267,19 @@ def flight_angles(position, velocity, destination, cruise_y, landing=False):
 class Flight:
     def __init__(self, session, destination, height):
         self.session, self.destination = session, destination
-        self.cruise_y = min(
-            310,
-            max(
-                session.position[1] + height,
-                (destination.y if destination.y is not None else session.position[1]) + height,
-            ),
+        self.build_ceiling = session.client.build_ceiling()
+        self.max_cruise_y = self.build_ceiling + 8
+        self.build_limit_cruise = height is None
+        self.cruise_y = (
+            self.max_cruise_y
+            if height is None
+            else min(
+                self.max_cruise_y,
+                max(
+                    session.position[1] + height,
+                    (destination.y if destination.y is not None else session.position[1]) + height,
+                ),
+            )
         )
         self.landing = None
         self.fallback = False
@@ -283,6 +290,11 @@ class Flight:
         self.boost_until = 0.0
         self.climbing = False
         self.rockets_used = 0
+
+    def cruise_floor(self):
+        # Keep a clearance reserve above the highest buildable block. The
+        # explicit lower-altitude override retains the wider fuel-saving band.
+        return self.cruise_y - (4 if self.build_limit_cruise else 25)
 
     def prepare_rocket(self):
         available = rockets()
@@ -413,7 +425,7 @@ class Flight:
                 raise Stopped(
                     "Obstacle immediately ahead. Travel controls released: take over the flight."
                 )
-            self.cruise_y = min(310, max(self.cruise_y, position[1] + 20))
+            self.cruise_y = min(self.max_cruise_y, max(self.cruise_y, position[1] + 20))
             return True
         return False
 
@@ -441,7 +453,7 @@ class Flight:
         )
         if self.landing is None and self.climbing:
             if now < self.boost_until:
-                pitch = -55 if self.session.position[1] < 300 else 0
+                pitch = -55 if self.session.position[1] < self.cruise_y - 3 else 0
             elif self.session.velocity[1] > 0.05:
                 pitch = -15
             else:
@@ -500,14 +512,9 @@ class Flight:
                 if self.remaining_wings <= 60 or not rockets():
                     self.begin_landing(fallback=True)
                     landing_started = now
-                elif distance <= max(
-                    160,
-                    2
-                    * (
-                        self.session.position[1]
-                        - (self.destination.y if self.destination.y is not None else 64)
-                    ),
-                ):
+                # High-altitude cruising must not start a surface search several
+                # hundred blocks away in destination chunks not loaded yet.
+                elif distance <= 160:
                     self.begin_landing()
                     landing_started = now
             self.steer()
@@ -533,13 +540,13 @@ class Flight:
             self.session.wait(0.08)
 
     def needs_boost(self, now):
-        # Fuel-saving default: spend altitude on a shallow glide, then climb on
-        # one rocket. A timer alone never triggers a boost.
+        # Use altitude feedback, never a fixed rocket timer. Default cruising
+        # keeps its reserve above build height; --height allows a wider glide.
         return (
             self.landing is None
             and not self.climbing
             and now >= self.boost_until
-            and self.session.position[1] < self.cruise_y - 25
+            and self.session.position[1] < self.cruise_floor()
             and self.session.velocity[1] <= 0.05
         )
 
@@ -607,6 +614,10 @@ def main(args):
     with Session(client, options.eat_at) as session:
         flight = Flight(session, options.destination, options.height)
         try:
+            m.echo(
+                f"Cruise target: Y={flight.cruise_y:g}; "
+                f"dimension build ceiling Y={flight.build_ceiling:g}."
+            )
             flight.fly()
             prepare_walk(session, options.destination)
         finally:

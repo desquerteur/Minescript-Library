@@ -100,6 +100,10 @@ class Client:
     def creative_flying(self) -> bool:
         return bool(self.player.getAbilities().flying)
 
+    def build_ceiling(self) -> int:
+        # In 26.3 getMaxY is inclusive: air above the top buildable block is +1.
+        return int(self.minecraft.level.getMaxY()) + 1
+
     def prepare_glide(self):
         """Prepare vanilla's glide request before the short jump window begins."""
         if self._glide_packet is not None:
@@ -176,13 +180,18 @@ def arguments(args, *, flight=False):
     parser.add_argument("--eat-at", type=int, default=14, metavar="POINTS")
     parser.add_argument("--check", action="store_true", help="Read-only setup and route check")
     if flight:
-        parser.add_argument("--height", type=int, default=50, help="Cruise clearance in blocks")
+        parser.add_argument(
+            "--height",
+            type=int,
+            default=None,
+            help="Override build-limit cruising with clearance above start/goal (25-120 blocks)",
+        )
     options = parser.parse_args(args)
     if len(options.coordinates) not in (2, 3):
         raise ValueError("Use X Z or X Y Z after the travel command.")
     if not 1 <= options.eat_at <= 19:
         raise ValueError("--eat-at must be between 1 and 19 hunger points (out of 20).")
-    if flight and not 25 <= options.height <= 120:
+    if flight and options.height is not None and not 25 <= options.height <= 120:
         raise ValueError("--height must be between 25 and 120 blocks.")
     origin = m.player_position()
     if len(options.coordinates) == 3:
