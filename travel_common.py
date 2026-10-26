@@ -248,12 +248,12 @@ class Session:
     def eat(self, on_tick=None):
         now = time.monotonic()
         if now < self.next_food:
-            return
+            return False
         level = self.client.food_level()
         self.last_food = level
         self.next_food = now + 1
         if level > self.eat_at:
-            return
+            return False
         release("forward", "jump", "sprint")
         m.echo(f"Hunger {level}/20: eating before continuing.")
         # Hunger must actually increase; consumption is not inferred from a timer.
@@ -290,6 +290,7 @@ class Session:
         self.last_food = level
         self.next_food = time.monotonic() + 1
         m.echo(f"Hunger {level}/20: continuing travel.")
+        return True
 
     def __exit__(self, *unused):
         release("forward", "jump", "sprint", "use", "attack")

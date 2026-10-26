@@ -570,3 +570,151 @@ def test_flight_stop_does_not_start_walking_in_midair(game, monkeypatch):
         elytra.main(["100", "64", "100"])
     finish_walk.assert_not_called()
     api.player_press_use.assert_called_with(False)
+
+
+def walking_simulation(game, monkeypatch, *, delayed_scans=False, hunger=False):
+    """Move on a fixed heading while forward is held, including during API calls.
+
+    Looking at a point does not magically stop the simulated player at that point.
+    This exposes waypoint overshoot and pauses that a clamped-position fake hides.
+    """
+    state = NS(
+        forward=False,
+        use=False,
+        direction=(0, 1),
+        transitions=[],
+        moving_scans=0,
+        looks=[],
+        hunger=20,
+        hungry_once=False,
+        food_ready=None,
+    )
+
+    def advance(seconds):
+        game.clock.now += max(seconds, 0.001)
+        if state.forward:
+            x, y, z = game.player.position
+            dx, dz = state.direction
+            game.player.position = (x + dx * 4.3 * seconds, y, z + dz * 4.3 * seconds)
+        if hunger and not state.hungry_once and game.clock.now >= 2:
+            state.hunger, state.hungry_once = 14, True
+        if state.food_ready is not None and game.clock.now >= state.food_ready:
+            state.hunger = 20
+
+    def forward(held):
+        state.transitions.append((held, game.player.position))
+        state.forward = held
+
+    def use(held):
+        assert not held or not state.forward, "Eating must pause walking"
+        state.use = held
+        if held:
+            state.food_ready = game.clock.now + 1.6
+
+    def look(x, y, z):
+        px, _, pz = game.player.position
+        dx, dz = x - px, z - pz
+        length = math.hypot(dx, dz)
+        state.direction = dx / length, dz / length
+        state.looks.append((dx, dz))
+
+    def blocks(positions):
+        if delayed_scans and len(positions) > 1000:
+            state.moving_scans += int(state.forward)
+            advance(0.18)
+        return flat_blocks(positions)
+
+    api.player_press_forward.side_effect = forward
+    api.player_press_use.side_effect = use
+    api.player_look_at.side_effect = look
+    api.getblocklist.side_effect = blocks
+    game.client.food_level.side_effect = lambda: state.hunger
+    monkeypatch.setattr(common.time, "sleep", advance)
+    return state
+
+
+@pytest.mark.parametrize(
+    "destination", [common.Destination(0, 40, 64), common.Destination(30, 30, 64)]
+)
+def test_level_walk_holds_forward_across_blocks_and_delayed_route_refreshes(
+    game, monkeypatch, destination
+):
+    state = walking_simulation(game, monkeypatch, delayed_scans=True)
+    travel.main([str(destination.x), str(destination.y), str(destination.z)])
+    assert destination.reached(game.player.position)
+    assert [held for held, _ in state.transitions].count(True) == 1
+    assert state.moving_scans >= 2
+    assert all(destination.reached(pos) for held, pos in state.transitions if not held)
+    assert all(dz > 0 for _, dz in state.looks), "Do not turn back toward passed waypoints"
+
+
+def test_continuous_walk_pauses_for_food_then_resumes(game, monkeypatch):
+    state = walking_simulation(game, monkeypatch, hunger=True)
+    api.player_inventory.return_value = [NS(item="minecraft:cooked_beef", count=3, slot=0)]
+    travel.main(["0", "64", "40"])
+    # One continuous hold before eating and one after; no per-block pulses.
+    assert [held for held, _ in state.transitions].count(True) == 2
+    assert call(True) in api.player_press_use.call_args_list
+    assert common.Destination(0, 40, 64).reached(game.player.position)
+    assert state.hunger == 20
+
+
+def test_changed_floor_stops_continuous_walking_before_the_hazard(game, monkeypatch):
+    state = walking_simulation(game, monkeypatch)
+
+    def blocks(positions):
+        return [
+            "minecraft:water"
+            if tuple(p) == (0, 63, 2) and game.clock.now >= 0.15
+            else "minecraft:stone"
+            if p[1] <= 63
+            else "minecraft:air"
+            for p in positions
+        ]
+
+    api.getblocklist.side_effect = blocks
+    with common.Session(game.client) as session:
+        walker = travel.Walker(session)
+        completed, blocked = walker.follow((0, 64, 0), [(0, 64, z) for z in range(1, 9)])
+        assert blocked
+        assert not walker.walking
+        assert game.player.position[2] < 2
+    assert [held for held, _ in state.transitions][:2] == [True, False]
+
+
+def test_f8_interrupts_a_held_forward_key(game, monkeypatch):
+    state = walking_simulation(game, monkeypatch)
+
+    def event(*args, **kwargs):
+        if game.clock.now >= 0.3:
+            return NS(key=297, action=1)
+        raise queue.Empty
+
+    api.EventQueue.return_value.get.side_effect = event
+    with pytest.raises(common.Stopped, match="F8"):
+        travel.main(["0", "64", "40"])
+    assert not state.forward
+    assert [held for held, _ in state.transitions].count(True) == 1
+
+
+def test_diagonal_route_is_straight_on_open_ground():
+    path = travel.plan(world(), (0, 64, 0), common.Destination(7, 7, 64))
+    assert path == [(n, 64, n) for n in range(1, 8)]
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {(1, 63, 0): "minecraft:water"},
+        {(1, 64, 0): "minecraft:stone"},
+        {(0, 65, 1): "minecraft:stone"},
+    ],
+)
+def test_diagonal_edges_cannot_cut_a_corner_or_missing_side_floor(change):
+    assert not world(change).edge((0, 64, 0), (1, 64, 1))
+
+
+def test_waypoint_plane_accepts_a_small_overshoot_without_aiming_back():
+    assert travel.passed((0.5, 64, 1.8), (0, 64, 0), (0, 64, 1))
+    assert not travel.passed((1.2, 64, 1.8), (0, 64, 0), (0, 64, 1))
+    assert not travel.passed((0.5, 64, 50), (0, 64, 0), (0, 64, 1))

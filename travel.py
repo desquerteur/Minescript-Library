@@ -164,6 +164,12 @@ class Terrain:
         # Head clearance while rising and while crossing into a lower block.
         x, y, z = start
         ex, ey, ez = end
+        dx, dz = ex - x, ez - z
+        if max(abs(dx), abs(dz)) != 1 or abs(ey - y) > 1:
+            return False
+        if dx and dz:
+            # Diagonal motion needs both side cells clear, including their floors.
+            return ey == y and self.standable((ex, y, z)) and self.standable((x, y, ez))
         if ey > y and not passable(self.at((x, y + 2, z))):
             return False
         return ey >= y or passable(self.at((ex, y + 1, ez)))
@@ -176,6 +182,10 @@ class Terrain:
                 if self.edge(pos, other):
                     yield other
                     break
+        for dx, dz in ((1, 1), (1, -1), (-1, 1), (-1, -1)):
+            other = x + dx, y, z + dz
+            if self.edge(pos, other):
+                yield other
 
     @classmethod
     def scan(cls, center, radius=12):
@@ -221,7 +231,12 @@ def plan(terrain, start, destination, recent=(), limit=8000):
         if remaining(current) + penalty[current] * 4 < remaining(best) + penalty[best] * 4:
             best = current
         for other in terrain.neighbors(current):
-            score = cost[current] + 1 + abs(other[1] - current[1]) * 0.5 + penalty[other] * 4
+            score = (
+                cost[current]
+                + math.hypot(other[0] - current[0], other[2] - current[2])
+                + abs(other[1] - current[1]) * 0.5
+                + penalty[other] * 4
+            )
             if score < cost.get(other, math.inf):
                 cost[other], previous[other] = score, current
                 heapq.heappush(frontier, (score + remaining(other), next(sequence), other))
@@ -236,19 +251,34 @@ def plan(terrain, start, destination, recent=(), limit=8000):
 
 
 def recheck_edge(start, end):
+    return recheck_edges(start, [end])
+
+
+def recheck_edges(start, ends):
     positions = set()
-    for x, y, z in (start, end):
+    cells = {start, *ends}
+    previous = start
+    for end in ends:
+        if end[0] != previous[0] and end[2] != previous[2]:
+            cells.update({(end[0], end[1], previous[2]), (previous[0], end[1], end[2])})
+        previous = end
+    for x, y, z in cells:
         positions.update((x, y + dy, z) for dy in (-1, 0, 1, 2))
         positions.update((x + dx, y, z + dz) for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)))
     positions = sorted(positions)
     terrain = Terrain(
         dict(zip(positions, m.getblocklist([list(pos) for pos in positions]), strict=True))
     )
-    return terrain.edge(start, end)
+    previous = start
+    for end in ends:
+        if not terrain.edge(previous, end):
+            return False
+        previous = end
+    return True
 
 
 def move(session, start, end):
-    """Short walking pulses, with controls released before bridge queries."""
+    """Precision movement for an elevation change; flat routes use Walker."""
     x, y, z = end
     goal = x + 0.5, z + 0.5
     began = time.monotonic()
@@ -277,6 +307,112 @@ def move(session, start, end):
         release("forward", "jump")
 
 
+def heading(start, end):
+    return end[0] - start[0], end[2] - start[2]
+
+
+def straight_run(start, path):
+    direction = heading(start, path[0])
+    previous, last = start, start
+    for end in path:
+        if end[1] != start[1] or heading(previous, end) != direction:
+            break
+        previous = last = end
+    return last
+
+
+def passed(position, start, end):
+    """Accept a crossed waypoint plane so a delayed sample cannot turn us back."""
+    dx, dz = heading(start, end)
+    length = math.hypot(dx, dz)
+    ox, oz = position[0] - end[0] - 0.5, position[2] - end[2] - 0.5
+    along = (ox * dx + oz * dz) / length
+    across = abs(ox * dz - oz * dx) / length
+    return abs(position[1] - end[1]) < 0.2 and (
+        math.hypot(ox, oz) < 0.2 or -0.12 <= along <= 1.5 and across < 0.28
+    )
+
+
+class Walker:
+    """Hold forward across waypoints and buffered straight-route refreshes."""
+
+    def __init__(self, session):
+        self.session = session
+        self.walking = False
+
+    def stop(self):
+        if self.walking:
+            release("forward", "jump")
+            self.walking = False
+
+    def follow(self, start, path, destination=None, *, refresh=False):
+        completed = []
+        next_check = 0.0
+        aim = None
+        last_position, last_progress = self.session.position, time.monotonic()
+        while path:
+            self.session.check()
+            position = self.session.position
+            if destination is not None and destination.reached(position):
+                self.stop()
+                return completed, False
+            if math.dist(position, last_position) > 0.05:
+                last_position, last_progress = position, time.monotonic()
+            elif time.monotonic() - last_progress > 3:
+                self.stop()
+                return completed, True
+            end = path[0]
+            if end[1] != start[1]:
+                self.stop()
+                if not move(self.session, start, end):
+                    return completed, True
+                completed.append(end)
+                start, path = end, path[1:]
+                last_progress, aim = time.monotonic(), None
+                continue
+            if passed(position, start, end) and self.session.client.grounded():
+                completed.append(end)
+                start, path = end, path[1:]
+                if (
+                    refresh
+                    and len(completed) >= 4
+                    and len(path) >= 6
+                    and straight_run(start, path[:6]) == path[5]
+                ):
+                    # Keep walking only with six validated, straight, flat cells
+                    # remaining while the next local scan and route are computed.
+                    if not recheck_edges(start, path[:6]):
+                        self.stop()
+                        return completed, True
+                    return completed, False
+                continue
+            px, py, pz = position
+            if math.hypot(px - end[0] - 0.5, pz - end[2] - 0.5) > 2.5 or abs(py - end[1]) > 0.4:
+                raise Stopped("Player left the walking route. Take control.")
+            if time.monotonic() >= next_check:
+                if not recheck_edges(start, path[:4]):
+                    self.stop()
+                    return completed, True
+                next_check = time.monotonic() + 0.15
+            if self.session.eat():
+                # Eating releases movement itself. Reset our input state and
+                # progress clock before resuming; do not count eating as stuck.
+                self.walking, aim = False, None
+                self.session.check(force=True)
+                last_position, last_progress = self.session.position, time.monotonic()
+                continue
+            target = straight_run(start, path)
+            if aim != target:
+                m.player_look_at(target[0] + 0.5, py + 1.62, target[2] + 0.5)
+                aim = target
+            if not self.walking:
+                m.player_press_forward(True)
+                self.walking = True
+            time.sleep(0.03)
+        self.stop()
+        return completed, False
+
+
 def main(args):
     options = arguments(args)
     exclusive()
@@ -298,35 +434,49 @@ def main(args):
         failures = 0
         best_distance, progress_time = destination.distance(session.position), time.monotonic()
         report_at = 0
-        while not destination.reached(session.position):
-            session.check(force=True)
-            session.eat()
-            current = cell(session.position)
-            path = plan(Terrain.scan(current), current, destination, recent)
-            for step in path[:4]:
-                if not move(session, current, step):
+        walker = Walker(session)
+        try:
+            while not destination.reached(session.position):
+                session.check(force=True)
+                current = cell(session.position)
+                path = plan(Terrain.scan(current), current, destination, recent)
+                session.check(force=True)
+                if destination.reached(session.position):
+                    break
+                actual = cell(session.position)
+                if actual != current:
+                    # Planning can finish after we have already crossed cells.
+                    # Trim those cells instead of steering back toward them.
+                    if actual not in path:
+                        walker.stop()
+                        continue
+                    path = path[path.index(actual) + 1 :]
+                    current = actual
+                    if not path:
+                        walker.stop()
+                        continue
+                completed, blocked = walker.follow(current, path, destination, refresh=True)
+                recent.extend([current, *completed[:-1]])
+                if blocked:
                     failures += 1
                     if failures >= 3:
                         raise Stopped(
                             "Walking is blocked after three route attempts. Take control."
                         )
-                    break
-                failures = 0
-                recent.append(current)
-                current = step
-                session.check(force=True)
-                if destination.reached(session.position):
-                    break
-            distance = destination.distance(session.position)
-            if distance < best_distance - 1:
-                best_distance, progress_time = distance, time.monotonic()
-            if time.monotonic() - progress_time > 90:
-                raise Stopped(
-                    "No sustained route progress for 90 seconds. A larger obstacle needs help."
-                )
-            if time.monotonic() >= report_at:
-                m.echo(f"Walking: {distance:.0f} blocks to destination.")
-                report_at = time.monotonic() + 15
+                else:
+                    failures = 0
+                distance = destination.distance(session.position)
+                if distance < best_distance - 1:
+                    best_distance, progress_time = distance, time.monotonic()
+                if time.monotonic() - progress_time > 90:
+                    raise Stopped(
+                        "No sustained route progress for 90 seconds. A larger obstacle needs help."
+                    )
+                if time.monotonic() >= report_at:
+                    m.echo(f"Walking: {distance:.0f} blocks to destination.")
+                    report_at = time.monotonic() + 15
+        finally:
+            walker.stop()
         m.echo("Arrived at the walking destination.")
 
 

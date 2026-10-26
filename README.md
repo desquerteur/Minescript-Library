@@ -69,8 +69,14 @@ attempts a nearby landing; if no landing area is found, it returns control.
 ## Walking
 
 Start on the ground, on full blocks. The local pathfinder works around nearby
-obstacles and handles one-block rises and drops. It checks the next step again
-before walking, replans every few blocks, and reports remaining distance.
+obstacles and handles one-block rises and drops. It **holds forward continuously
+on clear, level stretches**, checks the next few steps while moving, and reports
+remaining distance. Straight routes retain a checked buffer so local route
+refreshes can finish without releasing forward. Eating, blocked terrain, route
+ends, and precise elevation changes can pause walking.
+
+Open diagonal paths use diagonal steps with both adjoining cells checked; the
+traveler does not need to zigzag between cardinal directions on open ground.
 
 The current terrain model recognizes common full blocks, double slabs, and
 non-colliding plants. It rejects liquids, powder snow, cactus/fire hazards,
