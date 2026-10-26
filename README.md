@@ -110,22 +110,34 @@ Wear an Elytra with **more than 60 durability remaining**. Carry **plain firewor
 rockets without explosion stars**. Rockets and food can be in any normal carried
 inventory slot. Keep a clear outdoor takeoff corridor and sufficient food/fuel.
 
-The script checks the launch corridor, jumps once, waits until airborne, opens
-the wings using Minecraft's normal glide request, and confirms that gliding
-stays active before using a rocket. It also accepts an already-gliding or
-airborne player. Active Creative flight must be turned off first; the script
-does not change your game mode. A blocked jump and a refused glide now produce
-different messages. `--check` also shows these flight states. Default cruise
-height is 50 blocks above the higher of the start and requested destination,
-capped at Y=310; `--height 80` changes that clearance target. This is a target,
-not a guarantee of terrain clearance or a complete three-dimensional route.
+The script selects a rocket before jumping. A callback inside the game opens
+the wings using Minecraft's normal eligibility check and glide request, then
+uses one rocket on the same game tick. This removes the Python round trips
+between opening the wings and boosting. The callback also watches for F8,
+menus, damage, and world changes, and is removed after launch. Active Creative
+flight must be turned off first. An already-gliding or airborne player is accepted.
 
-It periodically boosts, steers, scans ahead for blocks, and begins a landing
-approach near the destination. A **flat, clear 9×9 pad** must exist within four
-blocks of the requested X/Z. For `X Y Z`, the pad must be at that feet height.
-For `X Z`, it searches downward for a suitable surface. On touchdown it uses the
-walking engine for the last part of the trip. Low fuel/wing durability triggers
-an earlier landing attempt and then walking toward the original destination.
+**Rocket-saving is the default.** A single rocket powers a climb, followed by a
+shallow glide that spends the gained altitude. Another rocket is requested only
+when altitude runs low and the previous climb has ended. There is no periodic
+four-second boost. Rocket duration is read from the held item, explosive rockets
+are rejected again inside the game, and each use is a single item action. The
+flight report includes the number of accepted rocket uses.
+
+The altitude reference is 50 blocks above the higher of the start and requested
+destination, capped at Y=310; `--height 80` raises that reference. Renewed climbs
+normally start 25 blocks below it. This is an altitude budget, not a guarantee
+of terrain clearance or a complete three-dimensional route.
+
+Landing searches loaded surface heights within **24 blocks** of the destination
+for a **dry, clear 5×5 patch**. For `X Y Z`, the patch must be at that feet height;
+`X Z` chooses a surface height automatically. If the goal area is unsuitable,
+the script also tries near the current flight position. It lets any active
+rocket finish, then chooses steering and pitch from a short motion prediction
+that accounts for inertia and braking before touchdown. This model assumes
+normal gravity and no movement effects. On touchdown, walking finishes the
+trip to the original coordinates, including correctly resolved relative coordinates.
+Low fuel/wing durability triggers an earlier landing attempt.
 
 Dense forest, enclosed spaces, Nether ceilings, unloaded terrain, uneven landing
 areas, lag, and strong effects on movement can exceed this controller's ability.
@@ -154,6 +166,9 @@ python -m pytest --cov=travel --cov=travel_common --cov=travel_elytra
 ```
 
 Tests use a fake game bridge. They check pathfinding, simulated ground travel,
-food selection/verification, input cleanup, rocket checks, flight-controller
-transitions, landing-area selection, and the handoff to walking. They do not
-simulate Minecraft flight physics or establish real-world landing reliability.
+food selection/verification, input cleanup, the shipped launch callback, rocket
+checks, flight-controller transitions, landing-area selection, and the handoff
+to walking. Landing feedback is also exercised in a simplified unboosted flight
+model at different update intervals. These checks do not establish live Minecraft
+launch or landing reliability; server behavior, collisions, and movement effects
+still require in-game testing.

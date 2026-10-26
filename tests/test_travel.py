@@ -15,6 +15,245 @@ import travel
 import travel_common as common
 import travel_elytra as elytra
 
+NativeFlightClass = elytra.NativeFlight
+
+
+@pytest.fixture
+def native_runtime(game):
+    """Execute the shipped tick callback against native API-shaped doubles."""
+    state = NS(
+        grounded=True,
+        flying=False,
+        health=20,
+        eligible=True,
+        explosive=False,
+        duration=1,
+        accepted=True,
+        slot_is_rocket=True,
+    )
+    listeners = {}
+    api.add_event_listener.side_effect = lambda kind, callback: (
+        listeners.update({kind: callback}) or len(listeners)
+    )
+    component = NS(
+        explosions=lambda: NS(isEmpty=lambda: not state.explosive),
+        flightDuration=lambda: state.duration,
+    )
+    stack = NS(getItem=lambda: NS(equals=lambda _: state.slot_is_rocket), get=lambda _: component)
+
+    def start_glide():
+        if not state.eligible or state.grounded:
+            return False
+        state.flying = True
+        return True
+
+    player = NS(
+        onGround=lambda: state.grounded,
+        isFallFlying=lambda: state.flying,
+        getHealth=lambda: state.health,
+        getMainHandItem=lambda: stack,
+        tryToStartFallFlying=Mock(side_effect=start_glide),
+        connection=NS(send=Mock()),
+    )
+    level = NS(hasChunk=lambda x, z: True, getHeight=lambda *args: 64, getMinY=lambda: -64)
+    use = Mock(side_effect=lambda *args: NS(consumesAction=lambda: state.accepted))
+    mc = NS(player=player, level=level, screen=None, gameMode=NS(useItem=use))
+    classes = {
+        "net.minecraft.client.Minecraft": NS(getInstance=lambda: mc),
+        "net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket": lambda p, a: (p, a),
+        "net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket$Action": NS(
+            START_FALL_FLYING="start"
+        ),
+        "net.minecraft.world.InteractionHand": NS(MAIN_HAND="main"),
+        "net.minecraft.world.item.Items": NS(FIREWORK_ROCKET="rocket"),
+        "net.minecraft.core.component.DataComponents": NS(FIREWORKS="fireworks"),
+        "net.minecraft.world.level.levelgen.Heightmap$Types": NS(
+            MOTION_BLOCKING_NO_LEAVES="surface"
+        ),
+    }
+    namespace = {"JavaClass": classes.__getitem__}
+    # Execute only the constant shipped source; no external text is evaluated.
+    exec(compile(elytra.NATIVE_FLIGHT, "<native-flight>", "exec"), namespace)  # noqa: S102
+    return NS(
+        state=state, player=player, level=level, mc=mc, use=use, code=namespace, listeners=listeners
+    )
+
+
+def test_native_launch_opens_wings_and_uses_one_rocket_on_the_same_tick(native_runtime):
+    native = native_runtime
+    native.code["arm"]()
+    native.listeners["tick"](None)
+    native.use.assert_not_called()
+    native.state.grounded = False
+    native.listeners["tick"](None)
+    assert native.code["status"] == pytest.approx(2.15)
+    native.player.connection.send.assert_called_once_with((native.player, "start"))
+    native.use.assert_called_once_with(native.player, "main")
+    native.listeners["tick"](None)
+    native.use.assert_called_once()
+    api.player_press_jump.assert_called_with(False)
+
+
+@pytest.mark.parametrize("reason", ["refused", "water", "menu", "damage", "world", "f8"])
+def test_native_launch_does_not_boost_after_rejection_or_interruption(native_runtime, reason):
+    native = native_runtime
+    native.code["arm"]()
+    native.state.grounded = False
+    if reason == "refused":
+        native.state.eligible = False
+    elif reason == "water":
+        native.state.eligible = False
+    elif reason == "menu":
+        native.mc.screen = "menu"
+    elif reason == "damage":
+        native.state.health = 18
+    elif reason == "world":
+        native.mc.level = object()
+    else:
+        native.listeners["key"](NS(key=297, action=1))
+    for _ in range(45):
+        native.listeners["tick"](None)
+    native.use.assert_not_called()
+    native.code["stop"]()
+    api.player_press_jump.assert_called_with(False)
+    assert api.remove_event_listener.call_count == 2
+
+
+@pytest.mark.parametrize("problem", ["explosive", "wrong_item", "grounded", "not_gliding"])
+def test_native_boost_checks_actual_held_item_and_flight(native_runtime, problem):
+    native = native_runtime
+    native.state.flying = problem != "not_gliding"
+    native.state.grounded = problem == "grounded"
+    native.state.explosive = problem == "explosive"
+    native.state.slot_is_rocket = problem != "wrong_item"
+    assert native.code["burn"]() == 0
+    native.use.assert_not_called()
+
+
+def test_native_boost_honors_rocket_duration_and_game_rejection(native_runtime):
+    native = native_runtime
+    native.state.grounded, native.state.flying = False, True
+    native.state.duration = 3
+    assert native.code["burn"]() == pytest.approx(3.15)
+    native.state.accepted = False
+    assert native.code["burn"]() == 0
+
+
+def test_native_surface_lookup_skips_unloaded_chunks(native_runtime):
+    native = native_runtime
+    native.level.hasChunk = lambda x, z: x >= 0 and z >= 0
+    rows = native.code["surfaces"](0, 0, 4).split(";")
+    assert len(rows) == 4
+    assert all(int(row.split(",")[0]) >= 0 and int(row.split(",")[2]) >= 0 for row in rows)
+
+
+def test_native_wrapper_releases_embedded_script_on_close(monkeypatch):
+    script = MagicMock()
+    script.get.side_effect = lambda name: {"status": 2.15}.get(name, Mock())
+    monkeypatch.setitem(sys.modules, "java", NS(eval_pyjinn_script=lambda source: script))
+    native = NativeFlightClass()
+    assert native.status() == 2.15
+    native.close()
+    native.stop.assert_called_once()
+    script.exit.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "position,velocity",
+    [
+        ((0, 120, 0), (0, 0, 1.4)),
+        ((0, 180, 150), (0, -0.2, 1.4)),
+        ((0, 70, 180), (0, -0.3, 1.5)),
+        ((20, 80, 220), (1, -0.2, 1)),
+        ((0, 100, 200), (0, -0.2, 1)),
+        ((0, 68, 200), (0, -0.1, 0.1)),
+    ],
+)
+@pytest.mark.parametrize("interval", [4, 10])
+def test_landing_feedback_in_unboosted_flight_model(position, velocity, interval):
+    """Model exercise only: no terrain, wind, effects, server or live client."""
+    destination = common.Destination(0, 200, 64)
+    for tick in range(1000):
+        if tick % interval == 0:
+            yaw, pitch = elytra.landing_angles(position, velocity, destination)
+        velocity = elytra.glide_step(velocity, yaw, pitch)
+        position = tuple(a + b for a, b in zip(position, velocity, strict=True))
+        if position[1] <= 64:
+            break
+    else:
+        pytest.fail("Landing model never touched down")
+    assert destination.distance(position) < 3.5
+    assert math.hypot(velocity[0], velocity[2]) < 0.55
+    assert velocity[1] >= -0.5
+
+
+def test_fuel_saving_glides_for_more_than_four_seconds_without_boost(game):
+    with common.Session(game.client) as session:
+        flight = elytra.Flight(session, common.Destination(1000, 0), 50)
+        session.position, session.velocity = (0, 120, 0), (0, -0.15, 1.1)
+        assert not flight.needs_boost(60)
+        session.position = (0, 80, 0)
+        assert flight.needs_boost(60)
+        flight.climbing = True
+        assert not flight.needs_boost(60)
+        flight.climbing = False
+        flight.boost_until = 61
+        assert not flight.needs_boost(60)
+        flight.boost_until = 0
+        flight.landing = common.Destination(0, 0, 64)
+        assert not flight.needs_boost(60)
+
+
+def test_landing_search_accepts_five_by_five_and_searches_beyond_four_blocks():
+    def blocks(positions):
+        return [
+            "minecraft:stone"
+            if p[1] == 63 and 10 <= p[0] <= 14 and -2 <= p[2] <= 2
+            else "minecraft:air"
+            for p in positions
+        ]
+
+    api.getblocklist.side_effect = blocks
+    assert elytra.landing_area(common.Destination(0, 0, 64), (0, 100, 0)) == common.Destination(
+        12.5, 0.5, 64
+    )
+    assert len(api.getblocklist.call_args.args[0]) < 20_000
+
+
+@pytest.mark.parametrize(
+    "coordinates,expected",
+    [
+        (["~100", "~-20"], ["100.5", "-19.5"]),
+        (["~100", "~", "~-20"], ["100.5", "64", "-19.5"]),
+        (["12345678.25", "-12345678.5"], ["12345678.25", "-12345678.5"]),
+    ],
+)
+def test_walking_handoff_uses_original_resolved_destination(
+    game, monkeypatch, coordinates, expected
+):
+    api.player_inventory.return_value = [NS(item="minecraft:firework_rocket", count=64, slot=1)]
+
+    def landed(_):
+        game.player.position = (40, 64, 30)
+
+    monkeypatch.setattr(elytra.Flight, "fly", landed)
+    walk = Mock()
+    monkeypatch.setattr(elytra, "walk_main", walk)
+    elytra.main(coordinates)
+    walk.assert_called_once_with([*expected, "--eat-at", "14"])
+
+
+def test_landing_waits_for_existing_rocket_to_finish(game):
+    api.getblocklist.side_effect = flat_blocks
+    with common.Session(game.client) as session:
+        session.position = (0, 120, 0)
+        game.player.position = session.position
+        flight = elytra.Flight(session, common.Destination(100, 0), 50)
+        flight.boost_until = game.clock.now + 1
+        flight.begin_landing()
+        assert game.clock.now >= flight.boost_until
+        game.native.burn.assert_not_called()
+
 
 @pytest.fixture(autouse=True)
 def game(monkeypatch):
@@ -59,7 +298,20 @@ def game(monkeypatch):
     )
     monkeypatch.setattr(travel, "Client", lambda: client)
     monkeypatch.setattr(elytra, "Client", lambda: client)
-    return NS(player=player, clock=clock, client=client)
+    native = NS(
+        arm=Mock(),
+        stop=Mock(),
+        close=Mock(),
+        burn=Mock(return_value=2.15),
+        status=Mock(return_value=-1),
+        surfaces=Mock(
+            side_effect=lambda x, z, r: ";".join(
+                f"{x + dx},64,{z + dz}" for dx in range(-r, r + 1, 4) for dz in range(-r, r + 1, 4)
+            )
+        ),
+    )
+    monkeypatch.setattr(elytra, "NativeFlight", lambda: native)
+    return NS(player=player, clock=clock, client=client, native=native)
 
 
 def flat_blocks(positions):
@@ -380,7 +632,8 @@ def test_rocket_use_releases_button_and_restores_hotbar(game):
     with common.Session(game.client) as session:
         assert elytra.Flight(session, common.Destination(100, 0), 50).boost()
     assert api.player_inventory_select_slot.call_args_list == [call(2), call(4)]
-    assert api.player_press_use.call_args_list[:2] == [call(True), call(False)]
+    game.native.burn.assert_called_once()
+    assert call(True) not in api.player_press_use.call_args_list
 
 
 def test_takeoff_checks_overhead_before_any_jump(game):
@@ -394,6 +647,7 @@ def test_takeoff_checks_overhead_before_any_jump(game):
 def test_failed_elytra_open_does_not_fire_a_rocket(game):
     game.client.flying.return_value = False
     api.getblocklist.side_effect = flat_blocks
+    api.player_inventory.return_value = [NS(item="minecraft:firework_rocket", count=64, slot=1)]
     with (
         common.Session(game.client) as session,
         pytest.raises(common.Stopped, match="Jump did not leave"),
@@ -403,11 +657,12 @@ def test_failed_elytra_open_does_not_fire_a_rocket(game):
     api.player_press_jump.assert_called_with(False)
 
 
-def test_climb_is_limited_and_landing_flares_when_fast():
+def test_cruise_uses_shallow_glide_and_landing_accounts_for_velocity():
     target = common.Destination(0, 100, 64)
-    assert elytra.flight_angles((0, 64, 0), (0, 0, 1), target, 200) == (0, -35)
-    assert elytra.flight_angles((0, 68, 95), (0, -0.3, 1), target, 120, True)[1] < 0
-    assert 0 <= elytra.flight_angles((0, 68, 95), (0, -0.1, 0.1), target, 120, True)[1] <= 5
+    assert elytra.flight_angles((0, 64, 0), (0, 0, 1), target, 200) == (0, -2)
+    fast = elytra.flight_angles((0, 68, 95), (0, -0.3, 1), target, 120, True)
+    slow = elytra.flight_angles((0, 68, 95), (0, -0.1, 0.1), target, 120, True)
+    assert fast != slow
 
 
 def test_landing_area_accepts_a_clear_flat_pad():
@@ -420,7 +675,7 @@ def test_landing_area_rejects_liquid_or_holes():
     api.getblocklist.side_effect = lambda positions: [
         "minecraft:water" if p[1] == 63 else "minecraft:air" for p in positions
     ]
-    with pytest.raises(common.Stopped, match="No flat"):
+    with pytest.raises(common.Stopped, match="No dry"):
         elytra.landing_area(common.Destination(0, 0, 64), (0, 100, 0))
 
 
@@ -538,6 +793,9 @@ def test_flight_transitions_to_landing_and_then_walking(game, monkeypatch, short
         game.client.wings_remaining.side_effect = [100, 50, 50, 50, 50, 50, 50]
     if shortage == "food":
         game.client.food_level.return_value = 14
+    if shortage == "fuel":
+        inventory = api.player_inventory.return_value
+        api.player_inventory.side_effect = [inventory, [], [], [], [], []]
     finish_walk = Mock()
     monkeypatch.setattr(elytra, "walk_main", finish_walk)
     landings = []
@@ -557,8 +815,6 @@ def test_flight_transitions_to_landing_and_then_walking(game, monkeypatch, short
         else:
             z += seconds * 30
         game.player.position = (x, y, z)
-        if shortage == "fuel" and call(True) in api.player_press_use.call_args_list:
-            api.player_inventory.return_value = []
 
     monkeypatch.setattr(common.time, "sleep", sleep)
     elytra.main(["0", "64", "200"])
@@ -727,51 +983,20 @@ def test_waypoint_plane_accepts_a_small_overshoot_without_aiming_back():
     assert not travel.passed((0.5, 64, 50), (0, 64, 0), (0, 64, 1))
 
 
-@pytest.mark.parametrize("jump_delay", [0.03, 0.75])
-def test_launch_waits_for_airborne_state_then_confirms_gliding_before_boost(
-    game, monkeypatch, jump_delay
-):
+def test_launch_preloads_rocket_and_always_restores_slot(game):
     api.getblocklist.side_effect = flat_blocks
     api.player_inventory.return_value = [NS(item="minecraft:firework_rocket", count=64, slot=1)]
-    state = NS(jumped_at=None, requested_at=None, prepared=False, boosted_at=None)
-
-    def prepare():
-        state.prepared = True
-
-    def jump(pressed):
-        if pressed:
-            assert state.prepared, "Prepare reflection before the airborne window"
-            state.jumped_at = game.clock.now
-
-    def grounded():
-        return state.jumped_at is None or game.clock.now - state.jumped_at < jump_delay
-
-    def request():
-        assert not grounded(), "Do not send a launch request on the ground"
-        state.requested_at = game.clock.now
-        return True
-
-    def flying():
-        return state.requested_at is not None and game.clock.now - state.requested_at >= 0.09
-
-    def use(pressed):
-        if pressed:
-            assert flying()
-            assert game.clock.now - state.requested_at >= 0.21
-            state.boosted_at = game.clock.now
-
-    game.client.prepare_glide.side_effect = prepare
-    game.client.grounded.side_effect = grounded
-    game.client.request_glide.side_effect = request
-    game.client.flying.side_effect = flying
-    api.player_press_jump.side_effect = jump
-    api.player_press_use.side_effect = use
+    game.client.flying.return_value = False
+    game.native.status.return_value = 2.15
     with common.Session(game.client) as session:
-        elytra.Flight(session, common.Destination(100, 0), 50).takeoff()
-    assert api.player_press_jump.call_args_list.count(call(True)) == 1
-    assert state.boosted_at is not None
-    game.client.request_glide.assert_called_once()
-    api.player_press_jump.assert_called_with(False)
+        flight = elytra.Flight(session, common.Destination(100, 0), 50)
+        flight.takeoff()
+        assert flight.rockets_used == 1
+        assert flight.boost_until > game.clock.now
+    game.native.arm.assert_called_once()
+    game.native.stop.assert_called_once()
+    assert api.player_inventory_select_slot.call_args_list == [call(1), call(4)]
+    game.client.request_glide.assert_not_called()
 
 
 def test_active_creative_flight_has_a_specific_message_and_no_takeoff(game):
@@ -787,44 +1012,23 @@ def test_active_creative_flight_has_a_specific_message_and_no_takeoff(game):
     assert call(True) not in api.player_press_use.call_args_list
 
 
-def test_refused_glide_request_never_uses_a_rocket(game):
+def test_refused_native_launch_returns_control_and_restores_slot(game):
     api.getblocklist.side_effect = flat_blocks
+    api.player_inventory.return_value = [NS(item="minecraft:firework_rocket", count=64, slot=1)]
     game.client.flying.return_value = False
     game.client.grounded.return_value = False
-    with (
-        common.Session(game.client) as session,
-        pytest.raises(common.Stopped, match="did not open and stay"),
-    ):
+    with common.Session(game.client) as session, pytest.raises(common.Stopped, match="refused"):
         elytra.Flight(session, common.Destination(100, 0), 50).takeoff()
-    assert 1 <= game.client.request_glide.call_count <= 14
-    assert call(True) not in api.player_press_use.call_args_list
-    assert call(True) not in api.player_press_jump.call_args_list
-
-
-def test_transient_glide_flag_is_not_treated_as_a_confirmed_launch(game):
-    api.getblocklist.side_effect = flat_blocks
-    game.client.grounded.return_value = False
-    state = NS(requested_at=None)
-
-    def request():
-        state.requested_at = game.clock.now
-        return True
-
-    game.client.request_glide.side_effect = request
-    game.client.flying.side_effect = lambda: (
-        state.requested_at is not None and game.clock.now - state.requested_at < 0.06
-    )
-    with (
-        common.Session(game.client) as session,
-        pytest.raises(common.Stopped, match="did not open and stay"),
-    ):
-        elytra.Flight(session, common.Destination(100, 0), 50).takeoff()
-    assert call(True) not in api.player_press_use.call_args_list
+    game.native.stop.assert_called_once()
+    assert api.player_inventory_select_slot.call_args_list[-1] == call(4)
 
 
 def test_f8_during_jump_releases_space_and_does_not_boost(game):
     api.getblocklist.side_effect = flat_blocks
+    api.player_inventory.return_value = [NS(item="minecraft:firework_rocket", count=64, slot=1)]
     game.client.flying.return_value = False
+
+    game.native.status.return_value = 0
 
     def event(*args, **kwargs):
         if game.clock.now >= 0.2:
