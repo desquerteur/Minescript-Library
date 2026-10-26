@@ -53,7 +53,9 @@ Cooked meat/fish, bread, baked potatoes, golden carrots, apples, carrots,
 beetroot, potatoes, melon, berries, cookies, and dried kelp are supported.
 Harmful food, chorus fruit, potions, and golden apples are excluded.
 
-Walking pauses to eat and looks away from interactive blocks. In flight,
+Walking pauses to eat and looks away from interactive blocks. While swimming,
+it keeps the float control held during eating so that the pause does not make
+the player sink. In flight,
 steering continues while eating. If food runs out during flight, the controller
 attempts a nearby landing; if no landing area is found, it returns control.
 
@@ -68,7 +70,7 @@ attempts a nearby landing; if no landing area is found, it returns control.
 
 ## Walking
 
-Start on the ground, on full blocks. The local pathfinder works around nearby
+Start on the ground on full blocks, or in open water. The local pathfinder works around nearby
 obstacles and handles one-block rises and drops. It **holds forward continuously
 on clear, level stretches**, checks the next few steps while moving, and reports
 remaining distance. Straight routes retain a checked buffer so local route
@@ -77,12 +79,27 @@ ends, and precise elevation changes can pause walking.
 
 Open diagonal paths use diagonal steps with both adjoining cells checked; the
 traveler does not need to zigzag between cardinal directions on open ground.
+Off-center starts first align with the next waypoint while keeping forward held.
+If a delayed position update crosses several known route cells, the controller
+resumes from that cell instead of declaring the player off-route.
 
 The current terrain model recognizes common full blocks, double slabs, and
-non-colliding plants. It rejects liquids, powder snow, cactus/fire hazards,
-unknown floors, and unsupported shapes. It does not dig, build bridges, swim,
+non-colliding plants. It also plans across open **water surfaces**, including
+deep water where there is no reachable riverbed. It rejects lava, powder snow,
+cactus/fire hazards, unknown floors, and unsupported shapes. It does not dig, build bridges,
 climb ladders, open doors, or handle half slabs/stairs. Detours that extend
 beyond the local scan may need a manual intermediate destination.
+
+For rivers and lakes, the bot holds forward and the float control, stays at the
+surface, and resumes walking on a reachable bank. It can leave water onto a
+bank up to one block higher. Water plants such as kelp and seagrass are accepted.
+Surface movement uses a floating height rather than requiring feet to remain
+exactly at an integer block height. If it starts submerged, it first attempts
+to surface; it searches up to 16 blocks above for an open surface and gives the
+ascent up to 12 seconds. Roofed/under-ice water, downward waterfalls, bubble
+columns, and underwater destinations are not supported routes. Use `X Z` if
+you do not know the destination surface height. Flight landing pads still
+require dry solid ground.
 
 It stops after repeated blocked steps or 90 seconds without sustained distance
 progress, rather than pushing against the same obstacle indefinitely.

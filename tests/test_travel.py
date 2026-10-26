@@ -54,6 +54,8 @@ def game(monkeypatch):
         creative_flying=Mock(return_value=False),
         prepare_glide=Mock(),
         request_glide=Mock(return_value=False),
+        in_water=Mock(return_value=False),
+        underwater=Mock(return_value=False),
     )
     monkeypatch.setattr(travel, "Client", lambda: client)
     monkeypatch.setattr(elytra, "Client", lambda: client)
@@ -171,10 +173,10 @@ def test_astar_rejects_jump_without_overhead_clearance():
     assert not terrain.edge((0, 64, 0), (1, 65, 0))
 
 
-def test_astar_avoids_liquids_and_cliffs():
+def test_astar_avoids_lava_and_cliffs():
     terrain = world(
         {
-            (1, 63, 0): "minecraft:water",
+            (1, 63, 0): "minecraft:lava",
             (2, 63, 0): "minecraft:air",
             (2, 62, 0): "minecraft:air",
             (2, 61, 0): "minecraft:air",
@@ -199,7 +201,7 @@ def test_no_route_is_reported_without_movement():
             for y in (64, 65, 66)
         }
     )
-    with pytest.raises(common.Stopped, match="No walking route"):
+    with pytest.raises(common.Stopped, match="No walking/swimming route"):
         travel.plan(terrain, (0, 64, 0), common.Destination(100, 0))
     api.player_press_forward.assert_not_called()
 
@@ -449,6 +451,8 @@ def test_java_reader_uses_actual_player_food_and_equipped_wings(monkeypatch):
         getFoodData=lambda: NS(getFoodLevel=lambda: 14),
         onGround=lambda: True,
         isFallFlying=lambda: False,
+        isInWater=lambda: False,
+        isUnderWater=lambda: False,
         getItemBySlot=Mock(return_value=chest),
     )
     classes = {
@@ -667,7 +671,7 @@ def test_changed_floor_stops_continuous_walking_before_the_hazard(game, monkeypa
 
     def blocks(positions):
         return [
-            "minecraft:water"
+            "minecraft:lava"
             if tuple(p) == (0, 63, 2) and game.clock.now >= 0.15
             else "minecraft:stone"
             if p[1] <= 63
@@ -708,7 +712,7 @@ def test_diagonal_route_is_straight_on_open_ground():
 @pytest.mark.parametrize(
     "change",
     [
-        {(1, 63, 0): "minecraft:water"},
+        {(1, 63, 0): "minecraft:lava"},
         {(1, 64, 0): "minecraft:stone"},
         {(0, 65, 1): "minecraft:stone"},
     ],
@@ -864,3 +868,218 @@ def test_creative_flight_reader_checks_live_ability_state():
     assert client.creative_flying() is False
     abilities.flying = True
     assert client.creative_flying() is True
+
+
+def river_blocks(positions):
+    return [
+        "minecraft:water[level=0]"
+        if 2 <= p[2] <= 12 and p[1] <= 63
+        else "minecraft:stone"
+        if p[1] <= 63
+        else "minecraft:air"
+        for p in positions
+    ]
+
+
+def test_pathfinder_crosses_a_river_without_a_solid_riverbed():
+    positions = [(x, y, z) for x in range(-4, 5) for y in range(58, 68) for z in range(17)]
+    terrain = travel.Terrain(dict(zip(positions, river_blocks(positions), strict=True)))
+    path = travel.plan(terrain, (0, 64, 0), common.Destination(0, 16, 64))
+    assert path[-1] == (0, 64, 16)
+    assert any(terrain.swimmable(p) for p in path)
+    assert all(terrain.traversable(p) for p in path)
+    assert not terrain.standable((0, 64, 5)), (
+        "A swimming cell must not become an Elytra landing pad"
+    )
+
+
+@pytest.mark.parametrize(
+    "state", ["minecraft:lava", "minecraft:bubble_column", "minecraft:water[level=8]"]
+)
+def test_swimming_does_not_allow_lava_bubble_columns_or_waterfalls(state):
+    terrain = world({(1, 63, 0): state})
+    assert not terrain.swimmable((1, 64, 0))
+    assert not terrain.edge((0, 64, 0), (1, 64, 0))
+
+
+def test_water_surface_projection_accepts_bobbing_feet_and_rejects_an_ice_roof():
+    api.getblocklist.side_effect = lambda positions: [
+        "minecraft:water" if p[1] <= 63 else "minecraft:air" for p in positions
+    ]
+    assert travel.navigation_cell((0.5, 63.55, 0.5), afloat=True) == (0, 64, 0)
+    assert travel.navigation_cell((0.5, 64.1, 0.5), afloat=True) == (0, 64, 0)
+    api.getblocklist.side_effect = lambda positions: [
+        "minecraft:water"
+        if p[1] <= 63
+        else "minecraft:packed_ice"
+        if p[1] == 64
+        else "minecraft:air"
+        for p in positions
+    ]
+    with pytest.raises(common.Stopped, match="No open water surface"):
+        travel.navigation_cell((0.5, 63.55, 0.5), afloat=True)
+
+
+def test_surface_arrival_tolerates_float_height_but_not_a_dry_bank_or_submersion():
+    target = common.Destination(0, 0, 64)
+    api.getblocklist.return_value = ["minecraft:water", "minecraft:air", "minecraft:air"]
+    assert travel.arrived(target, (0.5, 63.55, 0.5), afloat=True)
+    assert not travel.arrived(target, (0.5, 63.55, 0.5), afloat=True, submerged=True)
+    api.getblocklist.return_value = ["minecraft:stone", "minecraft:air", "minecraft:air"]
+    assert not travel.arrived(target, (0.5, 63.55, 0.5), afloat=True)
+
+
+@pytest.mark.parametrize("hunger", [False, True])
+def test_traveler_swims_a_river_eats_afloat_and_resumes_walking(game, monkeypatch, hunger):
+    """Approximate water movement to verify controller transitions, not fluid physics."""
+    state = walking_simulation(game, monkeypatch, hunger=hunger)
+    original_sleep = common.time.sleep
+    state.jump = False
+    wet_samples = []
+    api.player_press_jump.side_effect = lambda held: setattr(state, "jump", held)
+    api.getblocklist.side_effect = river_blocks
+
+    def in_water():
+        return 2 <= math.floor(game.player.position[2]) <= 12
+
+    game.client.in_water.side_effect = in_water
+    game.client.grounded.side_effect = lambda: not in_water()
+    game.client.underwater.side_effect = lambda: in_water() and game.player.position[1] + 1.62 < 64
+
+    def swim(seconds):
+        old = game.player.position
+        was_wet = in_water()
+        original_sleep(seconds)
+        x, _, z = game.player.position
+        if was_wet:
+            x = old[0] + (x - old[0]) * 2 / 4.3
+            z = old[2] + (z - old[2]) * 2 / 4.3
+        if 2 <= math.floor(z) <= 12:
+            assert state.jump, "Hold jump in water, including when eating"
+            wet_samples.append((state.use, state.jump))
+            game.player.position = (x, 63.55, z)
+        else:
+            game.player.position = (x, 64, z)
+
+    monkeypatch.setattr(common.time, "sleep", swim)
+    if hunger:
+        api.player_inventory.return_value = [NS(item="minecraft:cooked_beef", count=3, slot=0)]
+    travel.main(["0", "64", "20"])
+    assert common.Destination(0, 20, 64).reached(game.player.position)
+    assert wet_samples
+    assert [held for held, _ in state.transitions].count(True) == (2 if hunger else 1)
+    assert any(eating for eating, _ in wet_samples) is hunger
+    assert not state.jump
+    assert not state.forward
+
+
+def test_starting_underwater_surfaces_before_eating_or_moving_forward(game, monkeypatch):
+    game.player.position = (0.5, 60, 0.5)
+    game.client.in_water.return_value = True
+    game.client.grounded.return_value = False
+    game.client.underwater.side_effect = lambda: game.player.position[1] + 1.62 < 64
+    api.getblocklist.side_effect = lambda positions: [
+        "minecraft:water" if p[1] <= 63 else "minecraft:air" for p in positions
+    ]
+
+    def ascend(seconds):
+        game.clock.now += seconds
+        assert api.player_press_jump.call_args == call(True)
+        assert call(True) not in api.player_press_forward.call_args_list
+        assert call(True) not in api.player_press_use.call_args_list
+        x, y, z = game.player.position
+        game.player.position = x, min(63.55, y + seconds * 2), z
+
+    monkeypatch.setattr(common.time, "sleep", ascend)
+    # Already at the X/Z destination, but must regain breathable air first.
+    travel.main(["0", "0"])
+    assert not game.client.underwater()
+    api.player_press_jump.assert_called_with(False)
+
+
+def test_water_check_is_read_only(game):
+    game.player.position = (0.5, 63.55, 4.5)
+    game.client.in_water.return_value = True
+    game.client.grounded.return_value = False
+    api.getblocklist.side_effect = river_blocks
+    travel.main(["0", "64", "16", "--check"])
+    api.player_press_jump.assert_not_called()
+    api.player_press_forward.assert_not_called()
+    api.player_press_use.assert_not_called()
+
+
+@pytest.mark.parametrize("position", [(0.05, 64, 0.05), (0.95, 64, 0.95)])
+def test_walking_can_start_away_from_the_center_of_a_block(game, monkeypatch, position):
+    game.player.position = position
+    state = walking_simulation(game, monkeypatch, delayed_scans=True)
+    travel.main(["0", "64", "40"])
+    assert common.Destination(0, 40, 64).reached(game.player.position)
+    assert [held for held, _ in state.transitions].count(True) == 1
+
+
+def test_slow_position_updates_resynchronize_to_later_route_cells(game, monkeypatch):
+    state = walking_simulation(game, monkeypatch)
+    advance = common.time.sleep
+    state.delayed_once = False
+
+    def slow_blocks(positions):
+        if state.forward and not state.delayed_once and game.clock.now >= 0.2:
+            state.delayed_once = True
+            advance(0.75)  # More than three blocks move before the next snapshot.
+        return flat_blocks(positions)
+
+    api.getblocklist.side_effect = slow_blocks
+    travel.main(["0", "64", "40"])
+    assert state.delayed_once
+    assert common.Destination(0, 40, 64).reached(game.player.position)
+    assert [held for held, _ in state.transitions].count(True) == 1
+    assert all(dz > 0 for _, dz in state.looks)
+
+
+def test_swimming_can_approach_a_one_block_higher_bank(game, monkeypatch):
+    game.player.position = (0.5, 63.55, 0.5)
+    game.client.in_water.side_effect = lambda: game.player.position[1] < 65
+    game.client.grounded.side_effect = lambda: game.player.position[1] >= 65
+    api.getblocklist.side_effect = lambda positions: [
+        "minecraft:water"
+        if p[0] == 0 and p[1] <= 63
+        else "minecraft:stone"
+        if p[0] != 0 and p[1] <= 64
+        else "minecraft:air"
+        for p in positions
+    ]
+
+    def reach_bank(seconds):
+        game.clock.now += 0.2
+        assert api.player_press_jump.call_args == call(True)
+        game.player.position = (1.5, 65, 0.5)
+
+    monkeypatch.setattr(common.time, "sleep", reach_bank)
+    with common.Session(game.client) as session:
+        walker = travel.Walker(session)
+        completed, blocked = walker.follow((0, 64, 0), [(1, 65, 0)])
+        assert completed == [(1, 65, 0)]
+        assert not blocked
+        assert not walker.floating
+
+
+def test_surfacing_raises_feet_high_enough_even_after_the_eyes_reach_air(game, monkeypatch):
+    game.player.position = (0.5, 62.7, 0.5)
+    game.client.in_water.return_value = True
+    game.client.grounded.return_value = False
+    game.client.underwater.return_value = False
+    api.getblocklist.side_effect = lambda positions: [
+        "minecraft:water" if p[1] <= 63 else "minecraft:air" for p in positions
+    ]
+
+    def rise(seconds):
+        game.clock.now += seconds
+        x, y, z = game.player.position
+        game.player.position = (x, y + seconds * 2, z)
+
+    monkeypatch.setattr(common.time, "sleep", rise)
+    with common.Session(game.client) as session:
+        walker = travel.Walker(session)
+        walker.surface()
+        assert session.position[1] >= 63.1
+        walker.stop()

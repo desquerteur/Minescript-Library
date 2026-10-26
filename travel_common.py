@@ -91,6 +91,8 @@ class Client:
         self.hunger: Callable[[], int] = self.player.getFoodData().getFoodLevel
         self.grounded: Callable[[], bool] = self.player.onGround
         self.flying: Callable[[], bool] = self.player.isFallFlying
+        self.in_water: Callable[[], bool] = self.player.isInWater
+        self.underwater: Callable[[], bool] = self.player.isUnderWater
         self.chest_slot: Any = JavaClass("net.minecraft.world.entity.EquipmentSlot").CHEST
         self.elytra: Any = JavaClass("net.minecraft.world.item.Items").ELYTRA
         self._glide_packet: Any = None
@@ -274,7 +276,7 @@ class Session:
                 on_tick()
             time.sleep(min(0.05, max(0, end - time.monotonic())))
 
-    def eat(self, on_tick=None):
+    def eat(self, on_tick=None, *, stay_afloat=False):
         now = time.monotonic()
         if now < self.next_food:
             return False
@@ -283,7 +285,11 @@ class Session:
         self.next_food = now + 1
         if level > self.eat_at:
             return False
-        release("forward", "jump", "sprint")
+        release("forward", "sprint")
+        if stay_afloat:
+            m.player_press_jump(True)
+        else:
+            release("jump")
         m.echo(f"Hunger {level}/20: eating before continuing.")
         # Hunger must actually increase; consumption is not inferred from a timer.
         while level < max(18, self.eat_at + 1):

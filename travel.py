@@ -3,11 +3,12 @@
 r"""Walk with auto-eating: \travel X Z or \travel X Y Z [--eat-at 14] [--check].
 
 F8/menu stops. Carry ordinary food. Routes over full blocks, one-block steps
-and drops; does not dig, place blocks, swim, or use portals. No time limit.
+and drops, plus surface swimming; does not dig, place blocks or use portals.
 """
 
 import heapq
 import math
+import re
 import time
 from collections import Counter, deque
 from itertools import count
@@ -90,6 +91,15 @@ def name(state):
     return state.split("[", 1)[0].removeprefix("minecraft:")
 
 
+def water(state):
+    if name(state) in {"kelp", "kelp_plant", "seagrass", "tall_seagrass"}:
+        return True
+    if name(state) != "water":
+        return False
+    level = re.search(r"(?:\[|,)level=(\d+)(?:,|\])", state)
+    return level is None or int(level[1]) < 8  # Downward waterfalls are not surface routes.
+
+
 def passable(state):
     block = name(state)
     return "waterlogged=true" not in state and (
@@ -158,8 +168,22 @@ class Terrain:
             )
         )
 
+    def swimmable(self, pos):
+        x, y, z = pos
+        return (
+            self.clear(pos)
+            and water(self.at((x, y - 1, z)))
+            and all(
+                name(self.at((x + dx, y, z + dz))) not in {"cactus", "fire", "soul_fire", "lava"}
+                for dx, dz in ((0, 1), (1, 0), (0, -1), (-1, 0))
+            )
+        )
+
+    def traversable(self, pos):
+        return self.standable(pos) or self.swimmable(pos)
+
     def edge(self, start, end):
-        if not self.standable(end):
+        if not self.traversable(end):
             return False
         # Head clearance while rising and while crossing into a lower block.
         x, y, z = start
@@ -169,7 +193,7 @@ class Terrain:
             return False
         if dx and dz:
             # Diagonal motion needs both side cells clear, including their floors.
-            return ey == y and self.standable((ex, y, z)) and self.standable((x, y, ez))
+            return ey == y and self.traversable((ex, y, z)) and self.traversable((x, y, ez))
         if ey > y and not passable(self.at((x, y + 2, z))):
             return False
         return ey >= y or passable(self.at((ex, y + 1, ez)))
@@ -200,12 +224,45 @@ class Terrain:
         return cls(dict(zip(positions, states, strict=True)))
 
 
+def navigation_cell(position, *, afloat=False):
+    if not afloat:
+        return cell(position)
+    x, y, z = (math.floor(value) for value in position)
+    positions = [(x, level, z) for level in range(y - 2, y + 19)]
+    terrain = Terrain(
+        dict(zip(positions, m.getblocklist([list(pos) for pos in positions]), strict=True))
+    )
+    for level in range(y - 1, y + 17):
+        candidate = (x, level, z)
+        if terrain.swimmable(candidate):
+            return candidate
+    # Leaving water may put the center over the bank before the water-contact
+    # flag clears. Project onto its full-block floor instead of rejecting bobbing.
+    for level in sorted(range(y - 1, y + 3), key=lambda value: abs(value - position[1])):
+        candidate = (x, level, z)
+        if abs(level - position[1]) <= 1.1 and terrain.standable(candidate):
+            return candidate
+    raise Stopped("No open water surface or reachable bank found nearby. Take control.")
+
+
+def arrived(destination, position, *, afloat=False, submerged=False):
+    if submerged:
+        return False
+    if destination.reached(position):
+        return True
+    if not afloat or destination.distance(position) > 0.85 or destination.y is None:
+        return False
+    x, y, z = math.floor(destination.x), round(destination.y), math.floor(destination.z)
+    if not -1.1 <= position[1] - y <= 1.35:
+        return False
+    below, feet, head = m.getblocklist([[x, y - 1, z], [x, y, z], [x, y + 1, z]])
+    return water(below) and passable(feet) and passable(head)
+
+
 def plan(terrain, start, destination, recent=(), limit=8000):
     """A* inside loaded local terrain, with a frontier waypoint for long trips."""
-    if not terrain.standable(start):
-        raise Stopped(
-            "Your starting floor or headroom is unsupported. Stand on a clear full block."
-        )
+    if not terrain.traversable(start):
+        raise Stopped("Your starting floor, water surface or headroom is unsupported.")
     gx, gz = math.floor(destination.x), math.floor(destination.z)
     target_y = None if destination.y is None else round(destination.y)
 
@@ -242,7 +299,7 @@ def plan(terrain, start, destination, recent=(), limit=8000):
                 heapq.heappush(frontier, (score + remaining(other), next(sequence), other))
     if best == start:
         raise Stopped(
-            "No walking route found locally. Water, a cliff, wall or unknown terrain blocks it."
+            "No walking/swimming route found locally. A cliff, wall or unknown terrain blocks it."
         )
     path = [best]
     while path[-1] != start:
@@ -255,6 +312,16 @@ def recheck_edge(start, end):
 
 
 def recheck_edges(start, ends):
+    terrain = route_terrain(start, ends)
+    previous = start
+    for end in ends:
+        if not terrain.edge(previous, end):
+            return False
+        previous = end
+    return True
+
+
+def route_terrain(start, ends):
     positions = set()
     cells = {start, *ends}
     previous = start
@@ -269,12 +336,7 @@ def recheck_edges(start, ends):
     terrain = Terrain(
         dict(zip(positions, m.getblocklist([list(pos) for pos in positions]), strict=True))
     )
-    previous = start
-    for end in ends:
-        if not terrain.edge(previous, end):
-            return False
-        previous = end
-    return True
+    return terrain
 
 
 def move(session, start, end):
@@ -321,16 +383,27 @@ def straight_run(start, path):
     return last
 
 
-def passed(position, start, end):
+def steering_target(position, start, path):
+    dx, dz = heading(start, path[0])
+    lateral = abs(
+        (position[0] - start[0] - 0.5) * dz - (position[2] - start[2] - 0.5) * dx
+    ) / math.hypot(dx, dz)
+    # A distant aim point only slowly centers an off-center start. Center on
+    # the first waypoint before extending the lookahead, without releasing W.
+    return path[0] if lateral > 0.15 else straight_run(start, path)
+
+
+def passed(position, start, end, *, afloat=False):
     """Accept a crossed waypoint plane so a delayed sample cannot turn us back."""
     dx, dz = heading(start, end)
     length = math.hypot(dx, dz)
     ox, oz = position[0] - end[0] - 0.5, position[2] - end[2] - 0.5
     along = (ox * dx + oz * dz) / length
     across = abs(ox * dz - oz * dx) / length
-    return abs(position[1] - end[1]) < 0.2 and (
-        math.hypot(ox, oz) < 0.2 or -0.12 <= along <= 1.5 and across < 0.28
+    height_ok = (
+        (-1.1 <= position[1] - end[1] <= 1.35) if afloat else abs(position[1] - end[1]) < 0.2
     )
+    return height_ok and (math.hypot(ox, oz) < 0.2 or -0.12 <= along <= 1.5 and across < 0.28)
 
 
 class Walker:
@@ -339,30 +412,83 @@ class Walker:
     def __init__(self, session):
         self.session = session
         self.walking = False
+        self.floating = False
+
+    def float(self, enabled):
+        if self.floating != enabled:
+            m.player_press_jump(enabled)
+            if enabled:
+                release("sprint")
+            self.floating = enabled
+
+    def surface(self):
+        if self.walking:
+            release("forward")
+            self.walking = False
+        self.float(True)
+        surface_y = navigation_cell(self.session.position, afloat=True)[1]
+        started = time.monotonic()
+        while self.session.client.underwater() or self.session.position[1] < surface_y - 0.9:
+            self.session.check()
+            if time.monotonic() - started > 12:
+                raise Stopped("Could not reach breathable surface water. Take control.")
+            time.sleep(0.05)
+        self.session.check(force=True)
 
     def stop(self):
-        if self.walking:
+        if self.walking or self.floating:
             release("forward", "jump")
             self.walking = False
+            self.floating = False
 
     def follow(self, start, path, destination=None, *, refresh=False):
         completed = []
         next_check = 0.0
         aim = None
+        terrain = None
         last_position, last_progress = self.session.position, time.monotonic()
         while path:
             self.session.check()
             position = self.session.position
-            if destination is not None and destination.reached(position):
+            in_water = self.session.client.in_water()
+            if in_water and (self.session.client.underwater() or position[1] < start[1] - 0.9):
+                self.surface()
+                last_position, last_progress = self.session.position, time.monotonic()
+                continue
+            if destination is not None and arrived(destination, position, afloat=in_water):
                 self.stop()
                 return completed, False
-            if math.dist(position, last_position) > 0.05:
+            if math.hypot(position[0] - last_position[0], position[2] - last_position[2]) > 0.05:
                 last_position, last_progress = position, time.monotonic()
             elif time.monotonic() - last_progress > 3:
                 self.stop()
                 return completed, True
             end = path[0]
-            if end[1] != start[1]:
+            for offset, candidate in enumerate(path[1:], 1):
+                if (math.floor(position[0]), math.floor(position[2])) == (
+                    candidate[0],
+                    candidate[2],
+                ) and abs(position[1] - candidate[1]) < (1.4 if in_water else 0.3):
+                    # A slow bridge call can let the player cross several known
+                    # cells. Resume from that route cell rather than walking back
+                    # or declaring that the player left the route.
+                    completed.extend(path[:offset])
+                    start, path = path[offset - 1], path[offset:]
+                    terrain, aim = None, None
+                    break
+            end = path[0]
+            if terrain is None or time.monotonic() >= next_check:
+                terrain = route_terrain(start, path[:4])
+                previous = start
+                for target in path[:4]:
+                    if not terrain.edge(previous, target):
+                        self.stop()
+                        return completed, True
+                    previous = target
+                next_check = time.monotonic() + 0.15
+            wet = in_water or terrain.swimmable(start) or terrain.swimmable(end)
+            self.float(wet)
+            if end[1] != start[1] and not wet:
                 self.stop()
                 if not move(self.session, start, end):
                     return completed, True
@@ -370,7 +496,7 @@ class Walker:
                 start, path = end, path[1:]
                 last_progress, aim = time.monotonic(), None
                 continue
-            if passed(position, start, end) and self.session.client.grounded():
+            if passed(position, start, end, afloat=wet) and (wet or self.session.client.grounded()):
                 completed.append(end)
                 start, path = end, path[1:]
                 if (
@@ -387,21 +513,24 @@ class Walker:
                     return completed, False
                 continue
             px, py, pz = position
-            if math.hypot(px - end[0] - 0.5, pz - end[2] - 0.5) > 2.5 or abs(py - end[1]) > 0.4:
+            if wet and math.hypot(px - end[0] - 0.5, pz - end[2] - 0.5) > 2.5:
+                self.stop()
+                return completed, False  # A current may require a new route.
+            height_ok = (
+                min(start[1], end[1]) - 1.4 <= py <= max(start[1], end[1]) + 1.4
+                if wet
+                else abs(py - end[1]) <= 0.4
+            )
+            if math.hypot(px - end[0] - 0.5, pz - end[2] - 0.5) > 2.5 or not height_ok:
                 raise Stopped("Player left the walking route. Take control.")
-            if time.monotonic() >= next_check:
-                if not recheck_edges(start, path[:4]):
-                    self.stop()
-                    return completed, True
-                next_check = time.monotonic() + 0.15
-            if self.session.eat():
+            if self.session.eat(stay_afloat=wet):
                 # Eating releases movement itself. Reset our input state and
                 # progress clock before resuming; do not count eating as stuck.
                 self.walking, aim = False, None
                 self.session.check(force=True)
                 last_position, last_progress = self.session.position, time.monotonic()
                 continue
-            target = straight_run(start, path)
+            target = steering_target(position, start, path)
             if aim != target:
                 m.player_look_at(target[0] + 0.5, py + 1.62, target[2] + 0.5)
                 aim = target
@@ -418,14 +547,21 @@ def main(args):
     exclusive()
     client = Client()
     position = m.player_position()
-    if not client.grounded():
-        raise Stopped("Start walking while standing on the ground.")
+    in_water = client.in_water()
+    if not client.grounded() and not in_water:
+        raise Stopped("Start on the ground or in open surface water.")
     destination = options.destination
-    if destination.reached(position):
+    if arrived(destination, position, afloat=in_water, submerged=in_water and client.underwater()):
         m.echo("Already at the destination.")
         return
-    path = plan(Terrain.scan(cell(position)), cell(position), destination)
     if options.check:
+        current = navigation_cell(position, afloat=in_water)
+        projected = (current[0] + 0.5, current[1], current[2] + 0.5)
+        path = (
+            []
+            if destination.reached(projected)
+            else plan(Terrain.scan(current), current, destination)
+        )
         m.echo(f"Walking check: hunger {client.food_level()}/20; local route {len(path)} steps.")
         m.echo("Read-only check complete. Run without --check to travel.")
         return
@@ -436,14 +572,30 @@ def main(args):
         report_at = 0
         walker = Walker(session)
         try:
-            while not destination.reached(session.position):
+            if in_water:
+                walker.surface()
+            while not arrived(
+                destination,
+                session.position,
+                afloat=client.in_water(),
+                submerged=client.underwater(),
+            ):
                 session.check(force=True)
-                current = cell(session.position)
+                current = navigation_cell(
+                    session.position, afloat=client.in_water() or walker.floating
+                )
                 path = plan(Terrain.scan(current), current, destination, recent)
                 session.check(force=True)
-                if destination.reached(session.position):
+                if arrived(
+                    destination,
+                    session.position,
+                    afloat=client.in_water(),
+                    submerged=client.underwater(),
+                ):
                     break
-                actual = cell(session.position)
+                actual = navigation_cell(
+                    session.position, afloat=client.in_water() or walker.floating
+                )
                 if actual != current:
                     # Planning can finish after we have already crossed cells.
                     # Trim those cells instead of steering back toward them.
