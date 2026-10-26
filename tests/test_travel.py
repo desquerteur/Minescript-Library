@@ -57,7 +57,9 @@ def native_runtime(game):
     )
     level = NS(hasChunk=lambda x, z: True, getHeight=lambda *args: 64, getMinY=lambda: -64)
     use = Mock(side_effect=lambda *args: NS(consumesAction=lambda: state.accepted))
-    mc = NS(player=player, level=level, screen=None, gameMode=NS(useItem=use))
+    # Minecraft 26.3 has no public `screen` field. Keep it absent here so an
+    # accidental direct access fails just as it does in the installed client.
+    mc = NS(player=player, level=level, gameMode=NS(useItem=use))
     classes = {
         "net.minecraft.client.Minecraft": NS(getInstance=lambda: mc),
         "net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket": lambda p, a: (p, a),
@@ -94,6 +96,15 @@ def test_native_launch_opens_wings_and_uses_one_rocket_on_the_same_tick(native_r
     api.player_press_jump.assert_called_with(False)
 
 
+def test_native_menu_guard_works_without_a_minecraft_screen_field(native_runtime):
+    native = native_runtime
+    assert not hasattr(native.mc, "screen")
+    assert native.code["ready"]() is True
+    api.screen_name.assert_called_once_with()
+    api.screen_name.return_value = "Chat"
+    assert native.code["ready"]() is False
+
+
 @pytest.mark.parametrize("reason", ["refused", "water", "menu", "damage", "world", "f8"])
 def test_native_launch_does_not_boost_after_rejection_or_interruption(native_runtime, reason):
     native = native_runtime
@@ -104,7 +115,7 @@ def test_native_launch_does_not_boost_after_rejection_or_interruption(native_run
     elif reason == "water":
         native.state.eligible = False
     elif reason == "menu":
-        native.mc.screen = "menu"
+        api.screen_name.return_value = "menu"
     elif reason == "damage":
         native.state.health = 18
     elif reason == "world":

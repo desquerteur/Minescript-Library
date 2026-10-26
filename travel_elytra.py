@@ -61,7 +61,7 @@ status, ticks, listener, key_listener = 0, 0, None, None
 health = player.getHealth()
 
 def ready():
-    return (mc.player == player and mc.level == level and mc.screen is None
+    return (mc.player == player and mc.level == level and ms.screen_name() is None
             and player.getHealth() >= health and player.getHealth() > 6)
 
 def burn():
