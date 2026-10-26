@@ -1,0 +1,202 @@
+#
+# Diag v1.0.0
+#
+# A Minescript Diagnostic Tool made in Pyjinn, for checking the 
+# Minescript setup status to help find and resolve problems.
+#
+# https://github.com/Minescripters/PyPyj
+#
+
+from system.pyj.minescript import JavaClass, version_info, execute, echo_json, set_timeout
+
+File = JavaClass("java.io.File")
+Scanner = JavaClass("java.util.Scanner")
+FileWriter = JavaClass("java.io.FileWriter")
+BufferedWriter = JavaClass("java.io.BufferedWriter")
+JsonPrimitive = JavaClass("com.google.gson.JsonPrimitive")
+
+try:
+    # Minescript 5.0b4 or higher
+    from system.pyj.pathlib import Path
+except:  # noqa: E722
+    # Minescript 5.0b3 or lower
+    from system.pyj.sys import exit
+    print("Error: You are running an older version of Minescript.")
+    exit(1)
+    # Just exit, or try to File = JavaClass("java.io.File") for full 5.0 support??
+
+
+_ver: str = "1.0.0"
+
+root_dir: str = "minescript"
+sub_dir: str = "/src/lib"
+sep: str = " = "
+text_color: str = "white"
+key_color: str = "gray"
+value_color: str = "blue"
+log_file: str = root_dir + "/diag_report.log"
+LOG: bool = True
+
+vf = version_info()
+mc_ver: str = vf.minecraft
+vfj= vf.toJson()
+vfjo = vfj.getAsJsonObject()
+
+bufferedWriter = None
+
+def open_log_file(filename: str=log_file, appends: bool=False):
+    global bufferedWriter
+    
+    try:
+        fileWriter = FileWriter(filename, appends) # 'False' overwrites, 'True' appends
+        bufferedWriter = BufferedWriter(fileWriter)
+    except Exception as e:
+        print("Error writing to log file: " + e.getMessage())
+
+def close_log_file():
+    bufferedWriter.close()
+    
+def log2file(text: str):
+    try:
+        bufferedWriter.write(text)
+        bufferedWriter.newLine()
+    except Exception as e:
+        print("Error writing to log file: " + e.getMessage())
+
+def check_file(path, file) -> bool:
+    dir: Path = Path(path)
+    f: Path = dir.joinpath(file)
+    return f.exists()
+
+def header():
+    print()
+    text = '[{\"text\": \"Minescript Diagnostics \", \"color\": \"yellow\"},{\"text\": \"v\", \"color\": \"white\"},'
+    text = text + '{\"text\": \"'+_ver+'\", \"color\": \"aqua\"},'
+    text = text + '''
+    {\"text\": \" (by \", \"color\": \"white\"},
+    {\"text\": \"RazrCraft\", \"color\": \"#AA00AA\", \"bold\": true},
+    {\"text\": \")\", \"color\": \"white\"}
+    ]'''
+    echo_json(text)
+    if LOG:
+        log2file(f"Minescript Diagnostics {_ver} (by RazrCraft)")
+
+def title(text: str, color: str="white"):
+    print()
+    echo_json('[{\"text\": \"'+text+'\", \"color\": \"'+color+'\", \"bold\": true}]')
+    if LOG:
+        log2file("")
+        log2file(text)
+
+def add_line(field_name, field_value):
+    if type(field_value) is JsonPrimitive:
+        field_value = field_value.getAsString()
+
+    if field_value == "True":
+        val_color = "green"
+    elif field_value == "False":
+        val_color = "red"
+    else:
+        val_color = value_color
+        
+    if LOG:
+        log2file(f"{field_name}{sep}{field_value}")
+    field_value = field_value.replace('\\', '\\\\')
+    field_value = field_value.replace('"', "'")
+    echo_json('[{\"text\": \"'+field_name+'\", \"color\": \"'+key_color+'\"},{\"text\": \"'+sep+'\", \"color\": \"'+text_color+'\"},{\"text\": \"'+field_value+'\", \"color\": \"'+val_color+'\"}]')
+
+def check_system():
+    title("System")
+    # Iterate through VersionInfo field names and values
+    for entry in vfjo.entrySet():
+        add_line(entry.getKey(), entry.getValue())
+
+    add_line("installed_mappings", str(check_mappings()))
+
+def check_mappings() -> bool:
+    mapppings_dir = "/system/mappings"
+    moj_map_exist: bool = check_file(root_dir + mapppings_dir, f"{mc_ver}/client.txt")
+    int_map_exist: bool = check_file(root_dir + mapppings_dir, f"{mc_ver}/{mc_ver}.tiny")
+
+    if moj_map_exist and int_map_exist:
+        return True
+        
+    return False
+
+def check_python():
+    execute("\\pyeval 'import sys' 'echo_json([{\"text\": \"python_version\", \"color\": \""+key_color+"\"},{\"text\": \""+sep+"\", \"color\": \"white\"},{\"text\": f\"{sys.version}\", \"color\": \""+value_color+"\"}])'")
+    if LOG:
+        close_log_file()
+        open_log_file(appends=True)
+        execute("\\pyeval 'import sys' 'with open(\""+log_file+"\", \"a\") as f:' '  f.write(\"python_version = \" + sys.version)'")
+        log2file("")
+
+def check_lib(lib_file: str) -> str:
+    return str(check_file(root_dir + sub_dir, lib_file))
+
+def show_config():
+    title("Configuration (config.txt)")
+
+    f = File(root_dir + "/config.txt")
+    sc = Scanner(f)
+    while sc.hasNextLine():
+        raw = sc.nextLine().rstrip("\n")
+
+        if raw.strip() == "" or raw.lstrip().startswith("#"):
+            continue
+
+        if "=" not in raw:
+            continue
+
+        left, right = raw.split("=", 1)
+        key = left.strip()
+        value_part = right.lstrip()
+
+        if value_part.startswith("{"):
+            buf_lines = [value_part.rstrip("\n")]
+            brace_count = 0
+            for ch in value_part:
+                if ch == "{":
+                    brace_count += 1
+                elif ch == "}":
+                    brace_count -= 1
+
+            while sc.hasNextLine() and brace_count > 0:
+                nxt = sc.nextLine().rstrip("\n")
+                buf_lines.append(nxt)
+                for ch in nxt:
+                    if ch == "{":
+                        brace_count += 1
+                    elif ch == "}":
+                        brace_count -= 1
+
+            value = "\n".join(buf_lines).rstrip()
+        else:
+            value = value_part.strip()
+
+        add_line(key, value)
+        print()
+
+def libs():
+    title("Common libs")
+    add_line("lib_java", check_lib("lib_java.py"))
+    add_line("minescript_plus", check_lib("minescript_plus.py"))
+    add_line("lib_nbt", check_lib("lib_nbt.py"))
+    add_line("lib_inv", check_lib("lib_inv.py"))
+    add_line("lib_ren", check_lib("lib_ren.py"))
+
+
+if LOG:
+    open_log_file()
+header()
+check_system()
+check_python()
+
+# Check common libs
+set_timeout(lambda: libs(), 500)
+
+# Show Config (config.txt)
+#set_timeout(lambda: execute("\config"), 500)
+set_timeout(lambda: show_config(), 500)
+
+set_timeout(lambda: close_log_file(), 1000)

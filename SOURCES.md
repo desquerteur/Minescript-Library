@@ -33,6 +33,39 @@ is a separate prerequisite; its files are not copied into this repository.
   walking, Windows sound calls, and the missing Minescript Plus dependency.
   Uses visible sheep within reach, cooldowns, and the held shears. No chest storage.
 
+### Inventory counts, nearby entities, and targeted entity information
+
+- Author: Alex Phommarath, copyright 2026.
+- Source: [Scripts-For-MCSMP](https://github.com/LaosyAlex/Scripts-For-MCSMP),
+  pinned revision `8725efe812bf55aa29deb8a63ea4ad18e124c5a3`.
+- Original full license: [licenses/Scripts-For-MCSMP-MIT.txt](licenses/Scripts-For-MCSMP-MIT.txt).
+- Original files and installed adaptations:
+
+| Original source | Installed script | Preserved snapshot | Snapshot SHA-256 |
+| --- | --- | --- | --- |
+| [logPlayerInventory.py](https://github.com/LaosyAlex/Scripts-For-MCSMP/blob/8725efe812bf55aa29deb8a63ea4ad18e124c5a3/logPlayerInventory.py) | `inventory.py` | `upstream/logPlayerInventory.py.txt` | `2b836d1e24d0dcdf6b9dc655f79cfcbec97b88ef37e5b86bba7880d9dcf23b9e` |
+| [logAllEntities.py](https://github.com/LaosyAlex/Scripts-For-MCSMP/blob/8725efe812bf55aa29deb8a63ea4ad18e124c5a3/logAllEntities.py) | `nearby.py` | `upstream/logAllEntities.py.txt` | `b9da2b4de0db894406d5dcd0d516777c7caf3fa01e85da249b9800556120c264` |
+| [getEntityInfo.py](https://github.com/LaosyAlex/Scripts-For-MCSMP/blob/8725efe812bf55aa29deb8a63ea4ad18e124c5a3/getEntityInfo.py) | `entityinfo.py` | `upstream/getEntityInfo.py.txt` | `f93fd3c7818e77bbf8646a715d3bd73a75fdd771d046d238816bbbb787a39303` |
+
+Changes: removed hardcoded log paths and the unused Minescript Plus import.
+Output goes to local chat. Added item totals, filtering, distance limits,
+a cap on displayed entities, and handling for an empty crosshair target.
+NBT dumps are omitted from the targeted-entity summary.
+
+### Version diagnostics
+
+- Author: RazrCraft, copyright 2026.
+- Source: [Minescripters/Diag](https://github.com/Minescripters/Diag).
+- Pinned revision: `9be7601fba94fd85cbe19e1c7bf739dcf496c9d6`.
+- Original file: [diag.pyj](https://github.com/Minescripters/Diag/blob/9be7601fba94fd85cbe19e1c7bf739dcf496c9d6/diag.pyj).
+- Unchanged snapshot: `upstream/diag.pyj.txt`.
+- Snapshot SHA-256: `28e3e7af73c4787b53c702a5f3c010f9ff91531f72ee090de60dc8a9ac9e8ac9`.
+- Original full license: [licenses/Diag-MIT.txt](licenses/Diag-MIT.txt).
+- Installed adaptation: `diagnose.py`.
+- Changes: replaced Java/Pyjinn reflection with the public Python
+  `version_info()` API. Simplified the report to local chat, removed file
+  writes and configuration dumps, and removed nested command execution.
+
 ## Original additions
 
 `automine.py`, `farm.py`, `automation_common.py`, and the regression tests were

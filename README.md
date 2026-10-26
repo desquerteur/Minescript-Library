@@ -1,27 +1,47 @@
 # Minescript-Library
 
-Four MIT-licensed mining and farming commands for Minescript 5.0 and Python
-3.10 or later. Two community scripts were adapted, and two small helpers were
-added for this collection. Sources, original snapshots, and full upstream
-licenses are recorded in [SOURCES.md](SOURCES.md).
+Eight MIT-licensed scripts for mining, farming, and checking your supplies
+in Minecraft. Requires Minescript 5.0 and Python 3.10 or later. Six community
+scripts were adapted, and two automation helpers were added for this
+collection. Credits, original snapshots, and upstream licenses are recorded
+in [SOURCES.md](SOURCES.md).
 
-## Commands
+## Script catalog
+
+### Mining and farming
 
 Run these in Minecraft chat after configuring the command path below.
 Durations are seconds, default to 300, and must be between 1 and 3600.
 
-| Command | What it does | Setup |
-| --- | --- | --- |
-| `\automine cobblestone 120` | Mines visible, reachable blocks matching exactly that block ID | Hold the correct tool. Useful at a cobblestone generator or beside exposed ore. |
-| `\farm 300` | Harvests and replants mature wheat, carrots, potatoes, and beetroot within reach | Put matching seeds/carrots/potatoes in the hotbar. Crops without planting supplies are skipped. |
-| `\shear 300` | Aims at and shears nearby sheep, with a cooldown | Hold shears and stand inside a sheep pen. |
-| `\autofish 300` | Casts, detects bobber dips, reels in, and recasts | Hold a fishing rod, reel it in first, and aim at open water away from other fishing players. |
+| Script name | Example command | What it does | Setup |
+| --- | --- | --- | --- |
+| [automine.py](automine.py) | `\automine cobblestone 120` | Mines visible, reachable blocks matching exactly that block ID. Useful at a cobblestone generator or beside exposed ore. | Hold the correct tool. |
+| [farm.py](farm.py) | `\farm 300` | Harvests and replants fully grown wheat, carrots, potatoes, and beetroot within reach. | Put the corresponding seeds, carrots, or potatoes in the hotbar. Crops without planting supplies are skipped. |
+| [shear.py](shear.py) | `\shear 300` | Aims at and shears nearby sheep, with a cooldown between attempts. | Hold shears and stand inside a sheep pen. |
+| [autofish.py](autofish.py) | `\autofish 300` | Casts a fishing rod, detects bobber dips, reels in, and recasts. | Hold a fishing rod, reel it in first, and aim at open water away from other fishing players. |
 
 You can use a full block ID: `\automine minecraft:deepslate_iron_ore 120`.
 These commands stay in place. They do not navigate, collect scattered drops,
 store inventory, or replace worn tools. `farm` changes your selected hotbar
 slot to the appropriate planting item. Keep room in your inventory and
 monitor tool durability. Run one automation at a time.
+
+### Inventory and world tools
+
+These four tools print information in your local Minecraft chat and finish
+immediately. They do not press keys or change blocks and entities.
+
+| Script name | Example command | What it does | Options |
+| --- | --- | --- | --- |
+| [inventory.py](inventory.py) | `\inventory wheat` | Totals matching items across your main inventory and hotbar, and shows used/free slots. Useful for checking seeds, crops, or mined resources. | Omit the filter to list all item types. Armor and offhand slots are excluded. Filters ignore case. |
+| [nearby.py](nearby.py) | `\nearby 16 sheep` | Lists nearby loaded animals, players, or dropped items with their distance and coordinates. | Radius defaults to 16 blocks; allowed range is 1–64. Optional name/type filter. Shows up to 20 matches. Example for drops: `\nearby 16 item`. |
+| [entityinfo.py](entityinfo.py) | `\entityinfo 6` | Shows the name, type, position, available health, and UUID of the entity in your crosshair. | Range defaults to 6 blocks; allowed range is 1–64. Look directly at the entity. |
+| [diagnose.py](diagnose.py) | `\diagnose` | Displays Minecraft, Minescript, Python, mod loader, and operating system versions to help troubleshoot script setup. | No arguments. Displays no configuration file contents and writes no report file. |
+
+[automation_common.py](automation_common.py) is the shared helper used by the
+commands. Keep it beside the other scripts; it is not a standalone command.
+The `upstream/` folder contains reference snapshots, and `licenses/` contains
+the original authors' license notices.
 
 ## Installation
 
@@ -34,9 +54,10 @@ monitor tool durability. Run one automation at a time.
    ```
 
 4. Ensure the `python` setting points to a working Python executable.
-5. Restart Minecraft if commands are not listed by `\ls`.
+5. Restart Minecraft if commands are not listed by `\ls`, then run `\diagnose`
+   to check that the library can run.
 
-Alternatively, copy the five root `.py` files into the `minescript` directory,
+Alternatively, copy all root `.py` files into the `minescript` directory,
 keeping the license notices with your copy. Do not copy `upstream` snapshots
 or the test module as runnable game commands. No pip packages or Minescript
 Plus add-ons are required to use the commands.
@@ -45,9 +66,10 @@ See the official [Minescript configuration reference](https://minescript.net/doc
 
 ## Stopping and safeguards
 
-Press **F8** or open a menu/chat to stop. Sessions also stop on damage, low
-health, world/dimension changes, and their time limit. Inputs and event
-listeners are released on normal completion and Python exceptions. A forced
+For the four automation scripts, press **F8** or open a menu/chat to stop.
+Sessions also stop on damage, low health, world/dimension changes, and their
+time limit. Inputs and event listeners are released on normal completion and
+Python exceptions. A forced
 process termination can bypass Python cleanup; Minescript's built-in
 `\killjob -1` stops all jobs if needed.
 
@@ -79,6 +101,8 @@ installed Minescript API, security checks, and offline tests were checked
 during setup. Live harvesting, shearing, mining, and fishing in Minecraft
 still need an in-game trial; offline tests cannot prove those interactions.
 
-Setup verification: 41 offline tests passed, with 92% statement coverage.
-The production scripts passed Ruff, Pyright against the local Minescript
-5.0 API, and Bandit without findings.
+Tests also cover inventory slot boundaries, nearby-result limits, invalid
+tool arguments, diagnostics output, and README coverage of every script.
+Latest verification: 54 tests passed, with 92% statement coverage across the
+scripts and shared helper. Ruff, Pyright against the local Minescript 5.0
+API, and Bandit passed without findings.

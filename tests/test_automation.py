@@ -13,7 +13,11 @@ sys.modules["minescript"] = api
 import autofish  # noqa: E402
 import automation_common as common  # noqa: E402
 import automine  # noqa: E402
+import diagnose  # noqa: E402
+import entityinfo  # noqa: E402
 import farm  # noqa: E402
+import inventory  # noqa: E402
+import nearby  # noqa: E402
 import shear  # noqa: E402
 
 
@@ -195,7 +199,10 @@ def test_block_scan_handles_negative_coordinates():
     api.player_position.return_value = (-0.25, 64, -0.25)
 
     def blocks(positions):
-        return ["minecraft:stone" if tuple(pos) == (-1, 65, -1) else "minecraft:air" for pos in positions]
+        return [
+            "minecraft:stone" if tuple(pos) == (-1, 65, -1) else "minecraft:air"
+            for pos in positions
+        ]
 
     api.getblocklist.side_effect = blocks
     assert common.nearby_blocks(lambda state: state == "minecraft:stone") == [
@@ -294,3 +301,90 @@ def test_farm_harvests_then_verifies_the_replanted_crop(monkeypatch):
         farm.main(["2"])
     farm.break_block.assert_called_once()
     assert api.player_press_use.call_args_list.count(call(True)) == 1
+
+
+def test_inventory_counts_main_storage_and_hotbar_without_armor_or_offhand():
+    api.player_inventory.return_value = [
+        NS(item="minecraft:wheat_seeds", count=64, slot=0),
+        NS(item="minecraft:wheat_seeds", count=12, slot=9),
+        NS(item="minecraft:carrot", count=4, slot=1),
+        NS(item="minecraft:diamond_helmet", count=1, slot=103),
+        NS(item="minecraft:wheat_seeds", count=3, slot=40),
+    ]
+    inventory.main(["WHEAT"])
+    assert api.echo.call_args_list == [
+        call("minecraft:wheat_seeds: 76"),
+        call("Main inventory and hotbar: 3/36 slots used, 33 free."),
+    ]
+
+
+def test_nearby_caps_output_and_filters_before_displaying():
+    api.entities.return_value = [
+        NS(local=True, name="Player", type="entity.minecraft.player"),
+        NS(local=False, name="Cow", type="entity.minecraft.cow"),
+    ] + [
+        NS(local=False, name="Sheep", type="entity.minecraft.sheep", position=(1, 64, 0))
+        for _ in range(25)
+    ]
+    nearby.main(["16", "SHEEP"])
+    assert api.echo.call_count == 21
+    assert "nearest 20 of 25" in api.echo.call_args.args[0]
+
+
+@pytest.mark.parametrize(
+    "module,args",
+    [
+        (nearby, ["nan"]),
+        (nearby, ["65"]),
+        (nearby, ["0"]),
+        (entityinfo, ["inf"]),
+        (entityinfo, ["-1"]),
+        (diagnose, ["unexpected"]),
+        (inventory, ["wheat", "extra"]),
+    ],
+)
+def test_information_tools_reject_invalid_arguments_before_reading_game(module, args):
+    with pytest.raises(ValueError):
+        module.main(args)
+    assert not api.mock_calls
+
+
+def test_entity_information_handles_no_target():
+    api.player_get_targeted_entity.return_value = None
+    entityinfo.main([])
+    assert "Look directly at an entity" in api.echo.call_args.args[0]
+
+
+def test_entity_information_handles_an_entity_without_health():
+    api.player_get_targeted_entity.return_value = NS(
+        name="Dropped item",
+        type="entity.minecraft.item",
+        position=(1, 64, 0),
+        health=None,
+        uuid="item-uuid",
+    )
+    entityinfo.main(["8"])
+    assert not any(item.args[0].startswith("Health:") for item in api.echo.call_args_list)
+    api.player_press_attack.assert_not_called()
+    api.player_press_use.assert_not_called()
+
+
+def test_diagnostics_reports_versions_without_dumping_configuration():
+    api.version_info.return_value = NS(
+        minecraft="26.3",
+        minescript="5.0",
+        mod_loader="Fabric",
+        os_name="Windows",
+    )
+    diagnose.main([])
+    assert call("Minescript: 5.0") in api.echo.call_args_list
+    assert {item[0] for item in api.mock_calls} == {"version_info", "echo"}
+
+
+def test_readme_catalog_lists_all_commands_and_shared_helper():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    for script in root.glob("*.py"):
+        assert f"[{script.name}]({script.name})" in readme, f"Missing catalog entry: {script.name}"
