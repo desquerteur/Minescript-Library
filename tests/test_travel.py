@@ -18,6 +18,10 @@ import travel_elytra as elytra
 NativeFlightClass = elytra.NativeFlight
 
 
+class JavaInt32(int):
+    """Tag explicit Java int conversions at the native API boundary."""
+
+
 @pytest.fixture
 def native_runtime(game):
     """Execute the shipped tick callback against native API-shaped doubles."""
@@ -55,7 +59,16 @@ def native_runtime(game):
         tryToStartFallFlying=Mock(side_effect=start_glide),
         connection=NS(send=Mock()),
     )
-    level = NS(hasChunk=lambda x, z: True, getHeight=lambda *args: 64, getMinY=lambda: -64)
+
+    def has_chunk(x, z):
+        assert type(x) is JavaInt32 and type(z) is JavaInt32
+        return True
+
+    def get_height(kind, x, z):
+        assert type(x) is JavaInt32 and type(z) is JavaInt32
+        return 64
+
+    level = NS(hasChunk=has_chunk, getHeight=get_height, getMinY=lambda: -64)
     use = Mock(side_effect=lambda *args: NS(consumesAction=lambda: state.accepted))
     # Minecraft 26.3 has no public `screen` field. Keep it absent here so an
     # accidental direct access fails just as it does in the installed client.
@@ -73,7 +86,7 @@ def native_runtime(game):
             MOTION_BLOCKING_NO_LEAVES="surface"
         ),
     }
-    namespace = {"JavaClass": classes.__getitem__}
+    namespace = {"JavaClass": classes.__getitem__, "JavaInt": JavaInt32}
     # Execute only the constant shipped source; no external text is evaluated.
     exec(compile(elytra.NATIVE_FLIGHT, "<native-flight>", "exec"), namespace)  # noqa: S102
     return NS(

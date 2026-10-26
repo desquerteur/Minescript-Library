@@ -134,8 +134,11 @@ def surfaces(x, z, radius):
     for dx in range(-radius, radius + 1, 4):
         for dz in range(-radius, radius + 1, 4):
             px, pz = x + dx, z + dz
-            if level.hasChunk(px >> 4, pz >> 4):
-                y = level.getHeight(Heightmap.MOTION_BLOCKING_NO_LEAVES, px, pz)
+            # Pyjinn arithmetic (notably >>) produces Java Long values. These
+            # Minecraft overloads require int and do not accept implicit narrowing.
+            if level.hasChunk(JavaInt(px >> 4), JavaInt(pz >> 4)):
+                y = level.getHeight(Heightmap.MOTION_BLOCKING_NO_LEAVES,
+                                    JavaInt(px), JavaInt(pz))
                 if y > level.getMinY():
                     rows.append(f"{px},{y},{pz}")
     return ";".join(rows)

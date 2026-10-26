@@ -172,3 +172,11 @@ to walking. Landing feedback is also exercised in a simplified unboosted flight
 model at different update intervals. These checks do not establish live Minecraft
 launch or landing reliability; server behavior, collisions, and movement effects
 still require in-game testing.
+
+The optional Java bridge test runs the shipped surface lookup through the real
+Pyjinn interpreter against Java methods with Minecraft's `int` signatures. It
+checks negative coordinates, unloaded chunks, and coordinates near the world
+border. To enable it, set `MINESCRIPT_TEST_CLASSPATH` to the installed Pyjinn and
+Gson jars joined by your platform's classpath separator, and optionally set
+`MINESCRIPT_TEST_JAVA` to a JDK's `java` executable. Without that classpath, this
+test is skipped. It does not connect to Minecraft.
