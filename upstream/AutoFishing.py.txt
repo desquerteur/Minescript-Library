@@ -1,0 +1,77 @@
+import system.lib.minescript as m
+import time
+
+
+timestamp = time.perf_counter()
+
+
+def find_Bobber():
+    for entity in m.entities(sort='nearest',max_distance=3):
+
+        if "bobber" in entity.type:
+            return entity.uuid
+    
+    return False
+
+
+def reel():
+  m.player_press_use(True)
+  m.player_press_use(False)
+
+  time.sleep(.3)
+
+  m.player_press_use(True) 
+  m.player_press_use(False)
+
+
+def sellall():
+    global timestamp
+
+    if time.perf_counter() - timestamp > 600: # 10 minutes
+        timestamp = time.perf_counter()
+        m.execute("/sellall RAW_COD PUFFERFISH TROPICAL_FISH RAW_SALMON" )
+
+
+def bobber_coords():
+    for entity in m.entities():
+        if entity.uuid == bobber:
+            x, y, z = entity.position
+            return int(x), int(y), int(z)
+            
+
+
+m.echo("Auto-Fishing is now active!")
+m.echo("Cast your rod to begin fishing!")
+
+
+bobber = find_Bobber()
+
+while True:
+
+    bobber_found = False
+
+    for entity in m.entities():
+
+        if entity.uuid == bobber:
+            bobber_found = True
+
+            if entity.velocity[1] < -.1:
+
+                if abs(entity.velocity[0]) < .3 and abs(entity.velocity[2]) < .3:
+                    reel()
+                sellall()
+
+
+        if "arm" in entity.type:
+
+            if "!!" in entity.name:
+                xa, ya, za = entity.position
+                bobber_coords()
+
+                if (int(xa), int(ya), int(za)) and bobber_coords == bobber_coords:
+                        reel()
+
+            bobber_found = True
+    
+    if not bobber_found:
+        bobber = find_Bobber()
