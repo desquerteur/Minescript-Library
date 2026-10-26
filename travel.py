@@ -31,6 +31,7 @@ PLANTS = {
     "torchflower",
     "pink_petals",
     "wildflowers",
+    "leaf_litter",
     "sunflower",
     "lilac",
     "rose_bush",
@@ -183,6 +184,32 @@ class Terrain:
     def traversable(self, pos):
         return self.standable(pos) or self.swimmable(pos)
 
+    def block_reason(self, pos):
+        x, y, z = pos
+        feet, head, floor = self.at(pos), self.at((x, y + 1, z)), self.at((x, y - 1, z))
+        if not passable(feet):
+            return f"feet blocked by {feet} at X={x}, Y={y}, Z={z}"
+        if not passable(head):
+            return f"headroom blocked by {head} at X={x}, Y={y + 1}, Z={z}"
+        if not support(floor) and not water(floor):
+            return f"unsupported floor {floor} at X={x}, Y={y - 1}, Z={z}"
+        for dx, dz in ((0, 1), (1, 0), (0, -1), (-1, 0)):
+            state = self.at((x + dx, y, z + dz))
+            if name(state) in {"cactus", "fire", "soul_fire", "lava"}:
+                return f"nearby hazard {state} at X={x + dx}, Y={y}, Z={z + dz}"
+        return f"unsupported terrain at X={x}, Y={y}, Z={z}"
+
+    def corridor_reason(self, position, target, level, *other_levels):
+        levels = sorted({level, *other_levels})
+        cells = sorted(
+            swept_cells(position, target),
+            key=lambda p: (p[0] + 0.5 - position[0]) ** 2 + (p[1] + 0.5 - position[2]) ** 2,
+        )
+        for x, z in cells:
+            if not any(self.traversable((x, y, z)) for y in levels):
+                return "; ".join(self.block_reason((x, y, z)) for y in levels)
+        return "no confirmed body-width corridor"
+
     def corridor(self, position, target, level):
         return all(self.traversable((x, level, z)) for x, z in swept_cells(position, target))
 
@@ -266,7 +293,11 @@ def arrived(destination, position, *, afloat=False, submerged=False):
 def plan(terrain, start, destination, recent=(), limit=8000):
     """A* inside loaded local terrain, with a frontier waypoint for long trips."""
     if not terrain.traversable(start):
-        raise Stopped("Your starting floor, water surface or headroom is unsupported.")
+        raise Stopped(
+            "Your starting floor, water surface or headroom is unsupported. "
+            + terrain.block_reason(start)
+            + "."
+        )
     gx, gz = math.floor(destination.x), math.floor(destination.z)
     target_y = None if destination.y is None else round(destination.y)
     # A distant goal must be projected onto the local scan along its bearing.
@@ -612,12 +643,16 @@ def move(session, start, end, *, walker=None, continuation=(), afloat=False):
                 return False
             if time.monotonic() >= next_check:
                 if not recheck_edges(start, [end, *runway]):
+                    walker.blocked_reason = "the next step no longer has verified floor/headroom"
                     return False
                 body = corridor_terrain(session.position, aim, start[1], end[1])
                 if not all(
                     any(body.traversable((x, level, z)) for level in {start[1], end[1]})
                     for x, z in swept_cells(session.position, aim)
                 ):
+                    walker.blocked_reason = body.corridor_reason(
+                        session.position, aim, start[1], end[1]
+                    )
                     return False
                 next_check = time.monotonic() + 0.12
             if session.eat(stay_afloat=afloat):
@@ -675,6 +710,7 @@ class Walker:
         self.walking = False
         self.floating = False
         self.lease = None
+        self.blocked_reason = None
 
     def float(self, enabled):
         if self.floating != enabled:
@@ -746,6 +782,7 @@ class Walker:
     def follow(self, start, path, destination=None, *, refresh=False, planned=None):
         """Follow committed, body-width checked spans; progress never chases old centers."""
         completed, active, next_check = [], None, 0.0
+        self.blocked_reason = None
         if self.lease is None:
             self.lease = WalkLease()
         terrain = planned if planned is not None else Terrain.scan(start)
@@ -765,6 +802,7 @@ class Walker:
                 last_position, last_progress = position, time.monotonic()
             elif time.monotonic() - last_progress > 3:
                 self.stop()
+                self.blocked_reason = "no movement was observed for three seconds"
                 return completed, True
             if active is None:
                 end = path[0]
@@ -785,6 +823,8 @@ class Walker:
                     # No body-width corridor from the actual position. Replan
                     # there instead of turning back to a previous cell center.
                     self.stop()
+                    first = (path[0][0] + 0.5, start[1], path[0][2] + 0.5)
+                    self.blocked_reason = terrain.corridor_reason(position, first, start[1])
                     return completed, True
                 end = path[index]
                 target = (end[0] + 0.5, end[1], end[2] + 0.5)
@@ -877,6 +917,7 @@ class Walker:
                     continue
                 if not fresh.corridor(position, target, target[1]):
                     self.stop()
+                    self.blocked_reason = fresh.corridor_reason(position, target, target[1])
                     return completed, True
                 dx, dz = target[0] - position[0], target[2] - position[2]
                 length = max(0.001, math.hypot(dx, dz))
@@ -884,6 +925,7 @@ class Walker:
                 budget = safe_runway(fresh, position, ray, target[1])
                 if budget < 0.25:
                     self.stop()
+                    self.blocked_reason = fresh.corridor_reason(position, ray, target[1])
                     return completed, True
                 m.player_look_at(target[0], position[1] + 1.62, target[2])
                 budget -= 7 * (time.monotonic() - sampled)
@@ -974,7 +1016,8 @@ def main(args):
                     failures += 1
                     if failures >= 3:
                         raise Stopped(
-                            "Walking is blocked after three route attempts. Take control."
+                            "Walking is blocked after three route attempts. Take control. "
+                            + (walker.blocked_reason + "." if walker.blocked_reason else "")
                         )
                 else:
                     failures = 0

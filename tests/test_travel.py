@@ -386,6 +386,56 @@ def test_distant_goal_uses_its_bearing_instead_of_the_scan_corner():
     assert x > z > 0
 
 
+@pytest.mark.parametrize("segments", [1, 2, 3, 4])
+def test_leaf_litter_does_not_block_a_grass_floor(segments):
+    feet = f"minecraft:leaf_litter[segment_amount={segments},facing=north]"
+    terrain = world({(0, 64, 0): feet, (1, 64, 0): feet})
+    assert terrain.standable((0, 64, 0))
+    assert terrain.edge((0, 64, 0), (1, 64, 0))
+    assert travel.plan(terrain, (0, 64, 0), common.Destination(4, 0))
+
+
+def test_walk_can_start_and_continue_through_ground_covered_in_leaf_litter(game, monkeypatch):
+    game.player.position = (-0.5096, 64, 4.7788)
+    state = walking_simulation(game, monkeypatch, delayed_scans=True)
+    api.getblocklist.side_effect = lambda positions: [
+        "minecraft:grass_block"
+        if y <= 63
+        else "minecraft:leaf_litter[segment_amount=2,facing=north]"
+        if y == 64
+        else "minecraft:air"
+        for x, y, z in positions
+    ]
+    travel.main(["40", "-20"])
+    assert common.Destination(40, -20).reached(game.player.position)
+    assert [held for held, _ in state.transitions].count(True) == 1
+
+
+def test_start_failure_reports_the_block_not_just_a_generic_unsupported_message():
+    terrain = world({(0, 64, 0): "minecraft:sweet_berry_bush[age=3]"})
+    with pytest.raises(common.Stopped) as error:
+        travel.plan(terrain, (0, 64, 0), common.Destination(10, 0))
+    assert "feet blocked by minecraft:sweet_berry_bush[age=3]" in str(error.value)
+    assert "X=0, Y=64, Z=0" in str(error.value)
+
+
+def test_corridor_failure_identifies_missing_support():
+    terrain = world({(0, 63, 2): "minecraft:air"})
+    reason = terrain.corridor_reason((0.5, 64, 0.5), (0.5, 64, 4.5), 64)
+    assert "unsupported floor minecraft:air" in reason
+    assert "Y=63" in reason
+
+
+def test_step_diagnostic_checks_both_valid_heights_before_reporting_a_block():
+    # The starting floor is valid at 64, but not at the descending step's 63.
+    # Report the actual later gap, rather than falsely blaming that start cell.
+    terrain = world({(0, 63, 2): "minecraft:air", (0, 62, 2): "minecraft:air"})
+    reason = terrain.corridor_reason((0.5, 64, 0.5), (0.5, 63, 4.5), 63, 64)
+    assert "Z=2" in reason
+    assert "Z=0" not in reason
+    assert "Y=62" in reason and "Y=63" in reason
+
+
 @pytest.mark.parametrize(
     "origin,goal", [((1.95, 64, 1.95), (1, 1)), ((-0.05, 64, -0.05), (-1, -1))]
 )

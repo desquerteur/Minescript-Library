@@ -276,7 +276,7 @@ to keep walking when the next step is uncertain.
 | One-block rise | Checks the transition and uses one jump. Space beyond the step can allow continued forward movement. |
 | One-block drop | Can follow a checked downward transition. Larger drops are not planned as walking edges. |
 | Open water surface | Can swim and leave onto a reachable bank. See [Swimming](#swimming). |
-| Non-colliding supported plants | Can pass through recognized grass, flowers, crops, and similar plants. |
+| Non-colliding supported plants | Can pass through recognized grass, flowers, crops, leaf litter, and similar plants. |
 | Double slabs | Recognized as full-height support. |
 | Half slabs, stair blocks, ladders | Not supported by the route model. |
 | Lava, fire, cactus, powder snow | Rejected as route hazards. |
@@ -546,8 +546,8 @@ phase can report arrival or a reason it cannot continue.
 | Message/symptom | What to check or do |
 | --- | --- |
 | `No walking/swimming route found locally...` | A wall, cliff, hazard, or unknown terrain blocks the local route. Move to supported terrain or use a reachable intermediate goal around the obstacle. |
-| `Your starting floor, water surface or headroom is unsupported.` | Check the floor material, block shape, room above the player, and whether the water has an open surface. |
-| `Walking is blocked after three route attempts...` | Inspect the nearby obstruction. The bot does not dig, open doors, or force a crossing. |
+| `Your starting floor, water surface or headroom is unsupported...` | The following detail identifies the rejected block and its X/Y/Z. Check that material, the room above the player, and whether water has an open surface. |
+| `Walking is blocked after three route attempts...` | Read the appended obstruction or stalled-movement reason. The bot does not dig, open doors, or force a crossing. |
 | `No sustained route progress for 90 seconds...` | The local planner is not finding useful progress. Split the journey into manual intermediate destinations. |
 | Pauses or crouches briefly | It may be eating, approaching a tight spot, checking a transition, or braking after a delayed update. Check the preceding reason if it stops entirely. |
 | `Player left the checked step...` / `Player dropped below the checked route...` | Take control. A transition, push, or position correction exceeded the checked route. Reposition before restarting. |
@@ -596,6 +596,10 @@ lag condition, or terrain change. The stop reasons and return of control are
 part of the behavior, not confirmation that the goal was reached.
 
 ## Development and verification
+
+See the [Baritone implementation comparison](BARITONE_COMPARISON.md) for the
+terrain-classification bug found in the saved world, the targeted correction,
+and the remaining differences in movement execution.
 
 ### Source files
 
