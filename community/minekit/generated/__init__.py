@@ -1,1 +1,0 @@
-"""Vendored generated Minecraft catalogs."""
