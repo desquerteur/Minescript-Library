@@ -101,3 +101,67 @@ def test_shipped_walk_lease_with_real_pyjinn(tmp_path):
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert "Real Pyjinn walk lease: PASS" in result.stdout
+
+
+def test_shipped_collision_snapshot_with_real_pyjinn(tmp_path):
+    classpath = os.environ.get("MINESCRIPT_TEST_CLASSPATH")
+    if not classpath:
+        pytest.skip("Set MINESCRIPT_TEST_CLASSPATH to the Pyjinn and Gson jars")
+    java = os.environ.get("MINESCRIPT_TEST_JAVA") or shutil.which("java")
+    if not java:
+        pytest.fail("The real Pyjinn bridge test requires a JDK")
+    root = Path(__file__).resolve().parents[1]
+    module = ast.parse((root / "travel.py").read_text(encoding="utf-8"))
+    native = next(
+        ast.literal_eval(node.value)
+        for node in module.body
+        if isinstance(node, ast.Assign)
+        and any(
+            isinstance(target, ast.Name) and target.id == "NATIVE_TERRAIN"
+            for target in node.targets
+        )
+    )
+    probe = next(
+        node
+        for node in ast.parse(native).body
+        if isinstance(node, ast.FunctionDef) and node.name == "probe"
+    )
+    source = tmp_path / "shipped-terrain.pyj"
+    source.write_text(ast.get_source_segment(native, probe) + "\n", encoding="utf-8")
+    javac = Path(java).with_name("javac.exe" if os.name == "nt" else "javac")
+    compilation = subprocess.run(  # noqa: S603
+        [
+            str(javac),
+            "-classpath",
+            classpath,
+            "-d",
+            str(tmp_path),
+            str(root / "tests/fixtures/NativeTerrainProbe.java"),
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=30,
+        cwd=tmp_path,
+        check=False,
+    )
+    assert compilation.returncode == 0, compilation.stdout + compilation.stderr
+    result = subprocess.run(  # noqa: S603
+        [
+            java,
+            "--class-path",
+            str(tmp_path) + os.pathsep + classpath,
+            "NativeTerrainProbe",
+            str(source),
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=30,
+        cwd=tmp_path,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Real Pyjinn terrain lookup: PASS" in result.stdout

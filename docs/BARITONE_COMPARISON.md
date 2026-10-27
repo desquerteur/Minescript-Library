@@ -5,6 +5,12 @@ Review date: 2026-10-26. Reference: Baritone's `1.21.4` branch at
 This is an architecture comparison, not a claim that that Baritone build runs
 on Minecraft 26.3.
 
+**Historical review:** the table describes the implementation reviewed on that
+date. The subsequent [walking update](TRAVEL.md#game-tick-walking-control) adds
+live collision-shape snapshots, game-tick steering/distance checks, and a pause
+before eating. Python still plans routes and coordinates steps/swimming;
+the complete native movement-state architecture proposed below is not delivered.
+
 ## What differs
 
 | Concern | Baritone reference | Our walking script |

@@ -271,23 +271,49 @@ to keep walking when the next step is uncertain.
 
 | Terrain/action | Behavior |
 | --- | --- |
-| Common recognized solid terrain | Walks across suitable stone, dirt, grass blocks, sand, planks, and other recognized materials. |
+| Solid terrain | Reads Minecraft's collision shapes, so full floors do not depend on a block-name list. Flat full-width shapes with tops between 0.8 and 1 block are accepted too, including farmland/path blocks. |
 | Clear diagonal/angled paths | Uses body-width checked shortcuts rather than one-block zigzags. |
 | One-block rise | Checks the transition and uses one jump. Space beyond the step can allow continued forward movement. |
 | One-block drop | Can follow a checked downward transition. Larger drops are not planned as walking edges. |
 | Open water surface | Can swim and leave onto a reachable bank. See [Swimming](#swimming). |
-| Non-colliding supported plants | Can pass through recognized grass, flowers, crops, leaf litter, and similar plants. |
+| Non-colliding plants | Uses the game's empty collision shape and empty fluid state, with separate hazard exclusions. New plant names no longer require adding them to a walking whitelist. |
 | Double slabs | Recognized as full-height support. |
-| Half slabs, stair blocks, ladders | Not supported by the route model. |
+| Bottom slabs, stair shapes, ladders | Not supported by the route model. Upper slabs with a verified full-width top can act as floors. |
 | Lava, fire, cactus, powder snow | Rejected as route hazards. |
 | Magma, honey, slime blocks | Intentionally excluded as supporting floors. |
 | Unknown/unloaded support | Not treated as safe ground. |
 | Doors, gates, digging, block placement | No automatic opening, breaking, bridging, or building. |
 
-The checks use recognized block states rather than a complete Minecraft
-collision/physics solver. Normal walking speed is assumed. Movement effects,
+Walking reads loaded block states and collision traits together inside the game.
+An unloaded chunk is blocked. Each fresh corridor scan replaces both the block
+state and its collision result; a closed gate cannot retain its earlier open
+result. This remains a conservative cell-based route model, rather than a full
+solver for every partial shape. Normal walking speed is assumed. Movement effects,
 entities pushing/blocking the player, server corrections, and changes outside
 the client's loaded data can require manual control.
+
+### Game-tick walking control
+
+The Python planner approves a body-width corridor and a bounded movement distance.
+Inside the game, each tick checks actual movement against that distance and keeps
+the camera aimed along the approved span. It releases forward before the checked
+distance runs out, even when the Python loop is delayed. A separate expiry timer
+also bounds an unrenewed request. A safe expiry can be renewed; F8/menu cancellation
+stays latched for the rest of that job.
+
+Before eating, the walker stops its game-side controller. This prevents tick
+steering from fighting the food-use orientation. After food is verified, the
+route is checked again before movement resumes.
+
+This is our own MIT implementation. Wurst's
+[AutoWalk](https://github.com/Wurst-Imperium/Wurst7/blob/4fa258b7b339f1823e73ae8455c404209e3690cd/src/main/java/net/wurstclient/hacks/AutoWalkHack.java)
+holds forward, while its
+[GoTo](https://github.com/Wurst-Imperium/Wurst7/blob/4fa258b7b339f1823e73ae8455c404209e3690cd/src/main/java/net/wurstclient/commands/GoToCmd.java)
+and
+[WalkPathProcessor](https://github.com/Wurst-Imperium/Wurst7/blob/4fa258b7b339f1823e73ae8455c404209e3690cd/src/main/java/net/wurstclient/ai/WalkPathProcessor.java)
+provided reference points for separating path planning and movement updates.
+No Wurst source or Wurst installation is included or required. Ladders, mining,
+larger falls, and Wurst-specific abilities have not been added.
 
 ### Long trips and detours
 
@@ -617,7 +643,7 @@ and the remaining differences in movement execution.
 
 | File | Responsibility |
 | --- | --- |
-| [travel.py](../travel.py) | Terrain model, local pathfinding, body-width corridor checks, walking/swimming/step control, and the embedded walking movement timer. |
+| [travel.py](../travel.py) | Game-side collision snapshots, local pathfinding, body-width corridors, walking/swimming/steps, tick steering and movement-distance guard, and expiry timer. |
 | [travel_elytra.py](../travel_elytra.py) | Rocket checks, launch, rocket-saving cruise, landing-surface selection, motion prediction, and the walking handoff. |
 | [travel_common.py](../travel_common.py) | Coordinate parsing, hunger/flight state readers, food selection, shared stop checks, and input cleanup. |
 | [tests/test_travel.py](../tests/test_travel.py) | Offline behavior, geometry, movement-model, inventory, and cleanup tests. |
@@ -641,10 +667,11 @@ Players do not need these test packages to run the Minecraft commands.
 
 ### Real Pyjinn checks
 
-The optional Java tests execute the shipped surface lookup and walking timer
+The optional Java tests execute the shipped surface/collision lookups and walking controller
 through the real Pyjinn interpreter. They use Java fixtures, not a running game.
 They check numeric argument types, negative/world-border coordinates, unloaded
-chunks, stale timers, menu cancellation, and delayed movement requests.
+chunks, flat floor shapes, changed collision states, stale worlds/timers, tick
+steering, distance exhaustion, menu cancellation, and delayed movement requests.
 
 Set `MINESCRIPT_TEST_CLASSPATH` to the Pyjinn and Gson JARs, joined with the
 platform's classpath separator (`;` on Windows). The installed mod contains

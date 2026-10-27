@@ -11,6 +11,7 @@ public class NativeWalkLeaseProbe {
         public boolean forward, jump, sneak;
         public int starts;
         public double x, z;
+        public double aimX, aimY, aimZ;
         public String menu;
         public final ArrayList<Timer> timers = new ArrayList<>();
         public void player_press_forward(boolean down) {
@@ -21,6 +22,7 @@ public class NativeWalkLeaseProbe {
         public void player_press_sneak(boolean down) { sneak = down; }
         public String screen_name() { return menu; }
         public double[] player_position() { return new double[] {x, 64, z}; }
+        public void player_look_at(double x,double y,double z) { aimX=x; aimY=y; aimZ=z; }
         public boolean remove_event_listener(Number id) { return true; }
         public int set_timeout(Script.Function callback, int millis, Object generation) {
             timers.add(new Timer(callback, millis, generation));
@@ -57,6 +59,15 @@ public class NativeWalkLeaseProbe {
             api.x=2;
             call(script,"drive",600L,false,false,0.0,0.0,5.0);
             require(api.timers.getLast().millis()<=336,"Already traveled distance was ignored");
+            api.x=0;
+            call(script,"drive",600L,false,false,0.0,0.0,5.0,10.0,0.0);
+            call(script,"tick",(Object)null);
+            require(api.aimX==10.0 && Math.abs(api.aimY-65.62)<.0001,"Tick steering failed");
+            api.x=4.5;
+            call(script,"tick",(Object)null);
+            require(!api.forward,"Tick guard failed to stop at the end of the checked runway");
+            api.x=0;
+            call(script,"drive",600L,false);
             api.menu="Chat";
             call(script,"tick",(Object)null);
             require(!api.forward && !api.sneak,"Menu failed to release movement");

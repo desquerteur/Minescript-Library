@@ -3,6 +3,7 @@
 import math
 import queue
 import sys
+from contextlib import nullcontext
 from types import SimpleNamespace as NS
 from unittest.mock import MagicMock, Mock, call
 
@@ -17,6 +18,191 @@ import travel_elytra as elytra
 
 NativeFlightClass = elytra.NativeFlight
 WalkLeaseClass = travel.WalkLease
+GeometryReaderClass = travel.GeometryReader
+
+
+@pytest.fixture
+def geometry_runtime(monkeypatch):
+    scene = {}
+    level = NS()
+    player = object()
+    mc = NS(player=player, level=level)
+
+    class State:
+        def __init__(self, block, empty, full, fluid=False, top=None):
+            self.block, self.empty, self.full, self.fluid = block, empty, full, fluid
+            self.top = top
+
+        def getCollisionShape(self, actual_level, pos, context):
+            assert actual_level is level and context is player
+            boxes = NS(
+                size=lambda: 0 if self.top is None else 1,
+                get=lambda _: NS(minX=0, maxX=1, minZ=0, maxZ=1, maxY=self.top),
+            )
+            return NS(isEmpty=lambda: self.empty, full=self.full, toAabbs=lambda: boxes)
+
+        def getFluidState(self):
+            return NS(isEmpty=lambda: not self.fluid)
+
+        def __str__(self):
+            block, sep, properties = self.block.partition("[")
+            return f"Block{{{block}}}" + ("[" + properties if sep else "")
+
+    def block_pos(x, y, z):
+        assert all(type(v) is JavaInt32 for v in (x, y, z))
+        return int(x), int(y), int(z)
+
+    def get_state(pos):
+        assert level.hasChunkAt(pos), "Unloaded chunk was read"
+        default = (
+            ("minecraft:stone", False, True) if pos[1] < 64 else ("minecraft:air", True, False)
+        )
+        return State(*scene.get(pos, default))
+
+    level.hasChunkAt = lambda pos: pos[0] < 16
+    level.getBlockState = get_state
+    classes = {
+        "net.minecraft.client.Minecraft": NS(getInstance=lambda: mc),
+        "net.minecraft.core.BlockPos": block_pos,
+        "net.minecraft.world.level.block.Block": NS(isShapeFullBlock=lambda shape: shape.full),
+        "net.minecraft.world.phys.shapes.CollisionContext": NS(of=lambda actor: actor),
+    }
+    namespace = {"JavaClass": classes.__getitem__, "JavaInt": JavaInt32}
+    exec(compile(travel.NATIVE_TERRAIN, "<terrain>", "exec"), namespace)  # noqa: S102
+    script = NS(get=lambda name: namespace[name], exit=Mock())
+    monkeypatch.setitem(sys.modules, "java", NS(eval_pyjinn_script=lambda source: script))
+    return NS(scene=scene, mc=mc, level=level, namespace=namespace, script=script)
+
+
+def test_game_collision_snapshot_accepts_new_noncolliding_plants_and_real_full_floors(
+    geometry_runtime,
+):
+    scene = geometry_runtime.scene
+    scene[(0, 64, 0)] = ("example:soft_growth[age=2]", True, False)
+    scene[(0, 63, 0)] = ("example:ceramic_tile", False, True)
+    with GeometryReaderClass():
+        terrain = travel.Terrain.scan((0, 64, 0), radius=1)
+        assert terrain.standable((0, 64, 0))
+        assert terrain.at((0, 64, 0)) == "example:soft_growth[age=2]"
+        assert not travel.passable(terrain.at((0, 64, 0)))
+        assert not travel.support(terrain.at((0, 63, 0)))
+    assert travel.Terrain.reader is None
+    geometry_runtime.script.exit.assert_called_once()
+
+
+def test_collision_snapshot_refreshes_gate_state_and_never_reads_unloaded_chunks(geometry_runtime):
+    with GeometryReaderClass():
+        geometry_runtime.scene[(0, 64, 0)] = ("minecraft:oak_fence_gate[open=true]", True, False)
+        first = travel.Terrain.read([(0, 63, 0), (0, 64, 0), (0, 65, 0), (16, 64, 0)])
+        assert first.standable((0, 64, 0))
+        assert not first.open_at((16, 64, 0))
+        assert first.at((16, 64, 0)) == "unknown"
+        geometry_runtime.scene[(0, 64, 0)] = ("minecraft:oak_fence_gate[open=false]", False, False)
+        first.update(travel.Terrain.read([(0, 64, 0)]))
+        assert not first.standable((0, 64, 0))
+
+
+@pytest.mark.parametrize("block", sorted(travel.DANGER | {"oak_pressure_plate"}))
+def test_engine_empty_shapes_do_not_make_hazards_safe(block):
+    terrain = travel.Terrain({(0, 64, 0): "minecraft:" + block}, {(0, 64, 0): 5})
+    assert not terrain.open_at((0, 64, 0))
+
+
+def test_named_solid_block_without_support_shape_is_not_used_as_a_floor():
+    terrain = travel.Terrain({(0, 63, 0): "minecraft:stone_block"}, {(0, 63, 0): 4})
+    assert not terrain.floor_at((0, 63, 0))
+
+
+@pytest.mark.parametrize(
+    "top,accepted", [(0.9375, True), (0.875, True), (1, True), (0.5, False), (0.0625, False)]
+)
+def test_geometry_preserves_nearly_full_flat_floors_but_rejects_low_slabs(
+    geometry_runtime, top, accepted
+):
+    geometry_runtime.scene[(0, 63, 0)] = ("example:flat_floor", False, False, False, top)
+    with GeometryReaderClass():
+        terrain = travel.Terrain.read([(0, 63, 0), (0, 64, 0), (0, 65, 0)])
+        assert terrain.standable((0, 64, 0)) is accepted
+
+
+def test_collision_reader_rejects_waterlogged_empty_shapes_and_world_change(geometry_runtime):
+    geometry_runtime.scene[(0, 64, 0)] = ("example:waterlogged_growth", True, False, True)
+    with GeometryReaderClass():
+        assert not travel.Terrain.read([(0, 64, 0)]).open_at((0, 64, 0))
+        geometry_runtime.mc.level = object()
+        with pytest.raises(common.Stopped, match="World changed"):
+            travel.Terrain.read([(0, 64, 0)])
+
+
+@pytest.mark.parametrize("result", ["", "7|Block{minecraft:air}", "5|unexpected"])
+def test_incomplete_or_unrecognized_collision_snapshots_stop_instead_of_guessing(result):
+    reader = object.__new__(GeometryReaderClass)
+    reader.probe = lambda _: result
+    with pytest.raises(common.Stopped, match="Could not verify"):
+        reader.read([(0, 64, 0)])
+
+
+def test_real_walking_path_uses_engine_geometry_instead_of_name_lists(
+    game, monkeypatch, geometry_runtime
+):
+    monkeypatch.setattr(travel, "GeometryReader", GeometryReaderClass)
+    # No Python block-name lookup is allowed for this complete trip.
+    api.getblocklist.side_effect = AssertionError("Name-list snapshot used")
+    for x in range(-14, 16):
+        for z in range(-14, 55):
+            geometry_runtime.scene[(x, 63, z)] = ("example:ceramic_tile", False, True)
+            geometry_runtime.scene[(x, 64, z)] = ("example:soft_growth", True, False)
+    state = walking_simulation(game, monkeypatch)
+    travel.main(["1", "30"])
+    assert common.Destination(1, 30).reached(game.player.position)
+    assert [held for held, _ in state.transitions].count(True) == 1
+
+
+def test_native_tick_steers_and_brakes_at_checked_runway_without_python_polling(game):
+    api.add_event_listener.return_value = 99
+    api.set_timeout.return_value = 123
+    code = {"JavaInt": JavaInt32, "JavaClass": lambda name: NS(sqrt=math.sqrt)}
+    exec(compile(travel.NATIVE_WALK_LEASE, "<walk-lease>", "exec"), code)  # noqa: S102
+    assert code["drive"](600, False, False, 0.5, 0.5, 5, 10.5, 0.5) == 1
+    code["tick"](None)
+    api.player_look_at.assert_called_with(10.5, 65.62, 0.5)
+    game.player.position = (5, 64, 0.5)
+    code["tick"](None)
+    api.player_press_forward.assert_called_with(False)
+    assert not code["active"]
+    assert not code["aborted"]  # A refreshed route may continue after this safe stop.
+    api.player_press_forward.reset_mock()
+    code["tick"](None)
+    api.player_press_forward.assert_not_called()
+
+
+def test_food_pauses_tick_controller_before_inventory_use(game):
+    api.player_inventory.return_value = [NS(item="minecraft:cooked_beef", count=3, slot=1)]
+    game.client.food_level.side_effect = [14, 14, 14, 20, 20]
+    paused = Mock()
+    api.player_press_use.side_effect = lambda down: paused.assert_called_once() if down else None
+    with common.Session(game.client) as session:
+        assert session.eat(before_eating=paused)
+    paused.assert_called_once()
+
+
+def test_collision_reader_setup_failure_disposes_its_script(monkeypatch):
+    script = NS(get=Mock(side_effect=RuntimeError("binding failed")), exit=Mock())
+    monkeypatch.setitem(sys.modules, "java", NS(eval_pyjinn_script=lambda _: script))
+    with pytest.raises(RuntimeError, match="binding failed"), GeometryReaderClass():
+        pytest.fail("Reader unexpectedly started")
+    script.exit.assert_called_once()
+    assert travel.Terrain.reader is None
+
+
+def test_native_collision_read_only_check_never_presses_movement(
+    game, monkeypatch, geometry_runtime
+):
+    monkeypatch.setattr(travel, "GeometryReader", GeometryReaderClass)
+    travel.main(["1", "10", "--check"])
+    api.player_press_forward.assert_not_called()
+    api.player_press_jump.assert_not_called()
+    geometry_runtime.script.exit.assert_called_once()
 
 
 class JavaInt32(int):
@@ -709,6 +895,7 @@ def test_rejected_jump_stops_quickly_without_repeated_space_presses(game):
 
 @pytest.fixture(autouse=True)
 def game(monkeypatch):
+    monkeypatch.setattr(travel, "GeometryReader", nullcontext)
     api.reset_mock(return_value=True, side_effect=True)
     player = NS(position=(0.5, 64, 0.5), velocity=(0, 0, 0), health=20)
     api.player.return_value = player
@@ -773,7 +960,7 @@ def game(monkeypatch):
             self.wet = False
             leases.append(self)
 
-        def drive(self, distance, wet=False, *, origin=None):
+        def drive(self, distance, wet=False, *, origin=None, target=None):
             api.player_press_sneak(distance < 1.2)
             if not self.active:
                 api.player_press_forward(True)
@@ -1271,8 +1458,8 @@ def test_flight_transitions_to_landing_and_then_walking(game, monkeypatch, short
     game.client.flying.side_effect = lambda: game.player.position[1] > 64
     api.getblocklist.side_effect = flat_blocks
     if shortage == "wings":
-        game.client.wings_remaining.side_effect = (
-            lambda: 100 if game.client.wings_remaining.call_count == 1 else 50
+        game.client.wings_remaining.side_effect = lambda: (
+            100 if game.client.wings_remaining.call_count == 1 else 50
         )
     if shortage == "food":
         game.client.food_level.return_value = 14

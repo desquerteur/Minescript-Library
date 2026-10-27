@@ -289,7 +289,7 @@ class Session:
                 on_tick()
             time.sleep(min(0.05, max(0, end - time.monotonic())))
 
-    def eat(self, on_tick=None, *, stay_afloat=False):
+    def eat(self, on_tick=None, *, stay_afloat=False, before_eating=None):
         now = time.monotonic()
         if now < self.next_food:
             return False
@@ -298,6 +298,8 @@ class Session:
         self.next_food = now + 1
         if level > self.eat_at:
             return False
+        if before_eating is not None:
+            before_eating()
         release("forward", "sprint")
         if stay_afloat:
             m.player_press_jump(True)

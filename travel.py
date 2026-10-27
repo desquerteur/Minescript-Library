@@ -87,6 +87,105 @@ FLOORS = {
     "blue_ice",
 }
 BAD = {"magma_block", "honey_block", "slime_block", "powder_snow"}
+DANGER = BAD | {
+    "lava",
+    "fire",
+    "soul_fire",
+    "cactus",
+    "sweet_berry_bush",
+    "wither_rose",
+    "nether_portal",
+    "end_portal",
+    "end_gateway",
+    "cobweb",
+    "bubble_column",
+    "tripwire",
+}
+
+# Original MIT implementation. Query the installed game, rather than guessing
+# collision geometry from a block's name. No Wurst classes/code are used.
+NATIVE_TERRAIN = r"""
+Minecraft = JavaClass("net.minecraft.client.Minecraft")
+BlockPos = JavaClass("net.minecraft.core.BlockPos")
+Block = JavaClass("net.minecraft.world.level.block.Block")
+Context = JavaClass("net.minecraft.world.phys.shapes.CollisionContext")
+mc = Minecraft.getInstance()
+player, level = mc.player, mc.level
+
+def probe(encoded):
+    if mc.player != player or mc.level != level:
+        raise RuntimeError("World changed during terrain lookup")
+    context = Context.of(player)
+    rows = []
+    for point in encoded.split(";"):
+        xyz = point.split(",")
+        pos = BlockPos(JavaInt(int(xyz[0])), JavaInt(int(xyz[1])), JavaInt(int(xyz[2])))
+        if not level.hasChunkAt(pos):
+            rows.append("0|unknown")
+            continue
+        state = level.getBlockState(pos)
+        shape = state.getCollisionShape(level, pos, context)
+        flags = 4
+        if state.getFluidState().isEmpty():
+            if shape.isEmpty():
+                flags += 1
+            supported = Block.isShapeFullBlock(shape)
+            if not supported and not shape.isEmpty():
+                boxes = shape.toAabbs()
+                if boxes.size() == 1:
+                    box = boxes.get(JavaInt(0))
+                    supported = (box.minX <= 0 and box.maxX >= 1
+                                 and box.minZ <= 0 and box.maxZ >= 1
+                                 and 0.8 <= box.maxY <= 1)
+            if supported:
+                flags += 2
+        rows.append(f"{flags}|{state}")
+    return "\n".join(rows)
+"""
+
+
+class GeometryReader:
+    """One game-side reader per trip, with independent snapshots for each scan."""
+
+    def __enter__(self):
+        from java import eval_pyjinn_script
+
+        self.script: Any = eval_pyjinn_script(NATIVE_TERRAIN)
+        try:
+            self.probe: Any = self.script.get("probe")
+        except BaseException:
+            self.script.exit()
+            raise
+        self.previous = Terrain.reader
+        Terrain.reader = self
+        return self
+
+    def read(self, positions):
+        encoded = ";".join(f"{x},{y},{z}" for x, y, z in positions)
+        try:
+            rows = self.probe(encoded).splitlines()
+            if len(rows) != len(positions):
+                raise ValueError("Incomplete terrain snapshot")
+            states, geometry = {}, {}
+            for pos, row in zip(positions, rows, strict=True):
+                flag, state = row.split("|", 1)
+                flag = int(flag)
+                if flag not in {0, 4, 5, 6}:
+                    raise ValueError("Unknown collision result")
+                if flag:
+                    if not state.startswith("Block{") or "}" not in state:
+                        raise ValueError("Unexpected block-state format")
+                    state = state[6:].replace("}", "", 1)
+                else:
+                    state = "unknown"
+                states[pos], geometry[pos] = state, flag
+            return Terrain(states, geometry)
+        except Exception as error:
+            raise Stopped(f"Could not verify loaded block collisions: {error}") from error
+
+    def __exit__(self, *_):
+        Terrain.reader = self.previous
+        self.script.exit()
 
 
 def name(state):
@@ -149,21 +248,55 @@ def cell(position):
 
 
 class Terrain:
-    def __init__(self, states):
+    reader: Any = None
+
+    def __init__(self, states, geometry=None):
         self.states = states
+        self.geometry = geometry
+
+    @classmethod
+    def read(cls, positions):
+        positions = list(positions)
+        if not positions:
+            return cls({})
+        if cls.reader is not None:
+            return cls.reader.read(positions)
+        states = m.getblocklist([list(pos) for pos in positions])
+        return cls(dict(zip(positions, states, strict=True)))
 
     def at(self, pos):
         return self.states.get(pos, "unknown")
 
+    def update(self, other):
+        self.states.update(other.states)
+        if self.geometry is not None and other.geometry is not None:
+            self.geometry.update(other.geometry)
+
+    def open_at(self, pos):
+        state = self.at(pos)
+        if self.geometry is None:
+            return passable(state)
+        block = name(state)
+        return (
+            bool(self.geometry.get(pos, 0) & 1)
+            and block not in DANGER
+            and not block.endswith("pressure_plate")
+        )
+
+    def floor_at(self, pos):
+        if self.geometry is None:
+            return support(self.at(pos))
+        return bool(self.geometry.get(pos, 0) & 2) and name(self.at(pos)) not in DANGER
+
     def clear(self, pos):
         x, y, z = pos
-        return passable(self.at(pos)) and passable(self.at((x, y + 1, z)))
+        return self.open_at(pos) and self.open_at((x, y + 1, z))
 
     def standable(self, pos):
         x, y, z = pos
         return (
             self.clear(pos)
-            and support(self.at((x, y - 1, z)))
+            and self.floor_at((x, y - 1, z))
             and all(
                 name(self.at((x + dx, y, z + dz))) not in {"cactus", "fire", "soul_fire", "lava"}
                 for dx, dz in ((0, 1), (1, 0), (0, -1), (-1, 0))
@@ -187,11 +320,11 @@ class Terrain:
     def block_reason(self, pos):
         x, y, z = pos
         feet, head, floor = self.at(pos), self.at((x, y + 1, z)), self.at((x, y - 1, z))
-        if not passable(feet):
+        if not self.open_at(pos):
             return f"feet blocked by {feet} at X={x}, Y={y}, Z={z}"
-        if not passable(head):
+        if not self.open_at((x, y + 1, z)):
             return f"headroom blocked by {head} at X={x}, Y={y + 1}, Z={z}"
-        if not support(floor) and not water(floor):
+        if not self.floor_at((x, y - 1, z)) and not water(floor):
             return f"unsupported floor {floor} at X={x}, Y={y - 1}, Z={z}"
         for dx, dz in ((0, 1), (1, 0), (0, -1), (-1, 0)):
             state = self.at((x + dx, y, z + dz))
@@ -225,9 +358,9 @@ class Terrain:
         if dx and dz:
             # Diagonal motion needs both side cells clear, including their floors.
             return ey == y and self.traversable((ex, y, z)) and self.traversable((x, y, ez))
-        if ey > y and not passable(self.at((x, y + 2, z))):
+        if ey > y and not self.open_at((x, y + 2, z)):
             return False
-        return ey >= y or passable(self.at((ex, y + 1, ez)))
+        return ey >= y or self.open_at((ex, y + 1, ez))
 
     def neighbors(self, pos):
         x, y, z = pos
@@ -251,8 +384,7 @@ class Terrain:
             for bz in range(z - radius, z + radius + 1)
             for by in range(y - 5, y + 7)
         ]
-        states = m.getblocklist([list(pos) for pos in positions])
-        return cls(dict(zip(positions, states, strict=True)))
+        return cls.read(positions)
 
 
 def navigation_cell(position, *, afloat=False):
@@ -260,9 +392,7 @@ def navigation_cell(position, *, afloat=False):
         return cell(position)
     x, y, z = (math.floor(value) for value in position)
     positions = [(x, level, z) for level in range(y - 2, y + 19)]
-    terrain = Terrain(
-        dict(zip(positions, m.getblocklist([list(pos) for pos in positions]), strict=True))
-    )
+    terrain = Terrain.read(positions)
     for level in range(y - 1, y + 17):
         candidate = (x, level, z)
         if terrain.swimmable(candidate):
@@ -286,8 +416,8 @@ def arrived(destination, position, *, afloat=False, submerged=False):
     x, y, z = math.floor(destination.x), round(destination.y), math.floor(destination.z)
     if not -1.1 <= position[1] - y <= 1.35:
         return False
-    below, feet, head = m.getblocklist([[x, y - 1, z], [x, y, z], [x, y + 1, z]])
-    return water(below) and passable(feet) and passable(head)
+    terrain = Terrain.read([(x, y - 1, z), (x, y, z), (x, y + 1, z)])
+    return water(terrain.at((x, y - 1, z))) and terrain.clear((x, y, z))
 
 
 def plan(terrain, start, destination, recent=(), limit=8000):
@@ -396,9 +526,7 @@ def route_terrain(start, ends):
         positions.update((x, y + dy, z) for dy in (-1, 0, 1, 2))
         positions.update((x + dx, y, z + dz) for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)))
     positions = sorted(positions)
-    terrain = Terrain(
-        dict(zip(positions, m.getblocklist([list(pos) for pos in positions]), strict=True))
-    )
+    terrain = Terrain.read(positions)
     return terrain
 
 
@@ -440,7 +568,7 @@ def corridor_terrain(position, target, level, other_level=None):
         for dx, dz in ((0, 1), (1, 0), (0, -1), (-1, 0))
     )
     positions = sorted(positions)
-    return Terrain(dict(zip(positions, m.getblocklist([list(p) for p in positions]), strict=True)))
+    return Terrain.read(positions)
 
 
 def shortcut(position, start, path, terrain, distance=18):
@@ -485,6 +613,7 @@ NATIVE_WALK_LEASE = r"""
 import minescript as ms
 Math = JavaClass("java.lang.Math")
 active, aborted, floating, generation, timer, slowing = False, False, False, 0, None, False
+runway, aim = None, None
 
 def brake():
     global active
@@ -498,8 +627,9 @@ def timeout(expected):
         if not floating:
             ms.player_press_jump(False)
 
-def drive(milliseconds, wet, slow=False, origin_x=0.0, origin_z=0.0, budget=-1.0):
-    global active, floating, generation, timer, slowing
+def drive(milliseconds, wet, slow=False, origin_x=0.0, origin_z=0.0, budget=-1.0,
+          aim_x=None, aim_z=None):
+    global active, floating, generation, timer, slowing, runway, aim
     if aborted:
         return -1
     if budget >= 0:
@@ -523,6 +653,8 @@ def drive(milliseconds, wet, slow=False, origin_x=0.0, origin_z=0.0, budget=-1.0
     if timer is not None:
         ms.remove_event_listener(timer)
     floating = wet
+    runway = (origin_x, origin_z, budget) if budget >= 0 else None
+    aim = (aim_x, aim_z) if aim_x is not None and aim_z is not None else None
     slowing = slow or wet
     ms.player_press_sneak(slow and not wet)
     if not active:
@@ -532,12 +664,13 @@ def drive(milliseconds, wet, slow=False, origin_x=0.0, origin_z=0.0, budget=-1.0
     return 1
 
 def stop():
-    global generation, timer
+    global generation, timer, runway, aim
     generation += 1
     if timer is not None:
         ms.remove_event_listener(timer)
         timer = None
     brake()
+    runway, aim = None, None
     ms.player_press_sneak(False)
 
 def abort():
@@ -551,8 +684,21 @@ def key(event):
         abort()
 
 def tick(event):
-    if active and ms.screen_name() is not None:
+    if not active:
+        return
+    if ms.screen_name() is not None:
         abort()
+        return
+    position = ms.player_position()
+    if runway is not None:
+        distance = Math.sqrt((position[0]-runway[0])**2+(position[2]-runway[1])**2)
+        if runway[2]-distance <= (0.15 if floating or slowing else 0.65):
+            wet = floating
+            stop()
+            ms.player_press_sneak(not wet)
+            return
+    if aim is not None:
+        ms.player_look_at(aim[0],position[1]+1.62,aim[1])
 
 key_listener = ms.add_event_listener("key", key)
 tick_listener = ms.add_event_listener("tick", tick)
@@ -575,7 +721,7 @@ class WalkLease:
         self.stop: Any = self.script.get("stop")
         self._close: Any = self.script.get("close")
 
-    def drive(self, distance, wet=False, *, origin=None):
+    def drive(self, distance, wet=False, *, origin=None, target=None):
         # Reserve room for the player's width and residual ground momentum.
         # The time cap also bounds an interrupted or stalled Python process.
         milliseconds = walk_budget(distance)
@@ -586,6 +732,8 @@ class WalkLease:
             origin[0] if origin is not None else 0.0,
             origin[2] if origin is not None else 0.0,
             distance if origin is not None else -1.0,
+            target[0] if target is not None else None,
+            target[2] if target is not None else None,
         )
         if result < 0:
             raise Stopped("Walking stopped with F8 or an open menu.")
@@ -655,7 +803,7 @@ def move(session, start, end, *, walker=None, continuation=(), afloat=False):
                     )
                     return False
                 next_check = time.monotonic() + 0.12
-            if session.eat(stay_afloat=afloat):
+            if session.eat(stay_afloat=afloat, before_eating=walker.stop):
                 walker.stop()
             m.player_look_at(aim[0], py + 1.62, aim[2])
             if walker.lease is None:
@@ -673,7 +821,7 @@ def move(session, start, end, *, walker=None, continuation=(), afloat=False):
             if crossed and not runway and not grounded:
                 walker.stop()
             else:
-                walker.drive(math.hypot(aim[0] - px, aim[2] - pz) + 0.3, afloat)
+                walker.drive(math.hypot(aim[0] - px, aim[2] - pz) + 0.3, afloat, target=aim)
             time.sleep(0.03)
         return False
     finally:
@@ -746,10 +894,10 @@ class Walker:
             self.walking = False
             self.floating = False
 
-    def drive(self, distance, wet=False):
+    def drive(self, distance, wet=False, *, target=None):
         if self.lease is None:
             self.lease = WalkLease()
-        self.walking = self.lease.drive(distance, wet, origin=self.session.position)
+        self.walking = self.lease.drive(distance, wet, origin=self.session.position, target=target)
         return self.walking
 
     def close(self):
@@ -777,7 +925,7 @@ class Walker:
         if distance < 0.8:
             self.stop()
             return False
-        return self.drive(distance, wet)
+        return self.drive(distance, wet, target=runway)
 
     def follow(self, start, path, destination=None, *, refresh=False, planned=None):
         """Follow committed, body-width checked spans; progress never chases old centers."""
@@ -857,7 +1005,7 @@ class Walker:
                     finish = (goal[0] + 0.5, goal[1], goal[2] + 0.5)
                     fresh = corridor_terrain(position, finish, start[1])
                     if fresh.corridor(position, finish, start[1]):
-                        terrain.states.update(fresh.states)
+                        terrain.update(fresh)
                         path = [goal]
                         continue
                 if (
@@ -892,7 +1040,7 @@ class Walker:
                 )
             ):
                 self.float(False)
-            if self.session.eat(stay_afloat=wet):
+            if self.session.eat(stay_afloat=wet, before_eating=self.stop):
                 self.stop()
                 self.session.check(force=True)
                 last_position, last_progress = self.session.position, time.monotonic()
@@ -908,7 +1056,7 @@ class Walker:
                     position[2] + dz / length * extent,
                 )
                 fresh = corridor_terrain(position, ray, target[1])
-                terrain.states.update(fresh.states)
+                terrain.update(fresh)
                 sampled = time.monotonic()
                 self.session.check(force=True)
                 position = self.session.position
@@ -932,7 +1080,7 @@ class Walker:
                 if budget < 0.25:
                     self.stop()
                     return completed, False
-                if not self.drive(budget, wet):
+                if not self.drive(budget, wet, target=target):
                     return completed, False
                 next_check = time.monotonic() + 0.12
             time.sleep(0.03)
@@ -944,6 +1092,11 @@ def main(args):
     options = arguments(args)
     exclusive()
     client = Client()
+    with GeometryReader():
+        return walk(options, client)
+
+
+def walk(options, client):
     position = m.player_position()
     in_water = client.in_water()
     if not client.grounded() and not in_water:
